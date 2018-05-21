@@ -1,0 +1,29 @@
+{
+  "name": "tungenes",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "compile": "tsc",
+    "start": "npm run compile && concurrently -k \"tsc -w\" \"nodemon dist/tungenes.js\""
+  },
+  "dependencies": {
+    "compression": "^1.7.2",
+    "debug": "^2.6.9",
+    "dotenv": "^5.0.1",
+    "express": "~4.16.0",
+    "moment": "^2.22.1",
+    "morgan": "~1.9.0",
+    "mysql": "^2.15.0"
+  },
+  "devDependencies": {
+    "@types/compression": "0.0.36",
+    "@types/debug": "0.0.30",
+    "@types/dotenv": "^4.0.3",
+    "@types/express": "^4.11.1",
+    "@types/mysql": "^2.15.4",
+    "@types/node": "^10.0.4",
+    "concurrently": "^3.5.1",
+    "nodemon": "^1.17.4",
+    "typescript": "^2.8.3"
+  }
+}
