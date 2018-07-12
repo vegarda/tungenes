@@ -4,8 +4,10 @@ dotenv.config();
 import * as express from 'express';
 import * as compression from 'compression';
 import * as debug from 'debug';
-import * as  mysql from 'mysql';
-import * as  moment from 'moment';
+import * as cors from 'cors';
+
+import DataSocket from './data-socket';
+
 
 import archiveRoute from './routes/archive.route';
 import realtimeRoute from './routes/realtime.route';
@@ -16,18 +18,25 @@ import windrose10Route from './routes/windrose10.route';
 export default class Tungenes {
 
     private express: express.Application;
+    private dataSocket: DataSocket;
 
     constructor(private port: number = 80) {
         this.express = express();
         this.configExpress();
         this.addRoutes();
         this.express.listen(this.port);
+        this.addDataSocket();
     }
 
     private configExpress(): void {
         console.log('configExpress');
         this.express.use(compression());
+        this.express.use(cors());
         // this.express.use(debug());
+    }
+
+    private addDataSocket() {
+        this.dataSocket = new DataSocket();
     }
 
     private addRoutes(): void {
