@@ -75,5 +75,9 @@ export function getRequestTime(timeUnit: string, amount: number): RequestTime {
 
     interval = interval * Math.ceil(amount / 2);
 
-    return <RequestTime>{startTime, endTime, interval};
+    return <RequestTime>{
+        startTime: startTime,
+        endTime: endTime,
+        interval: interval
+    };
   }
