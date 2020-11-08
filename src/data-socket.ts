@@ -8,12 +8,17 @@ export default class DataSocket {
 
     private wss: WebSocket.Server;
     private openSockets: WebSocket[] = [];
-    private consoleData: IConsoleData;
+    private consoleData: IConsoleData = {
+        dateTime: 0
+    };
 
     constructor(private port: number = 800) {
         this.configWebSocket();
-        this.updateSockets();
-        this.getData().then(data => this.consoleData = data);
+        this.waitForDbConnection();
+    }
+
+    private waitForDbConnection() {
+        connection.on('connection', () => this.updateSockets());
     }
 
     private configWebSocket() {
@@ -51,14 +56,16 @@ export default class DataSocket {
     private async updateSockets() {
         if (this.openSockets.length > 0) {
             this.getData().then(async (data) => {
-                if (data.dateTime > this.consoleData.dateTime) {
-                    // console.log(data);
+                if (this.consoleData.dateTime < data.dateTime) {
                     this.consoleData = data;
                     this.openSockets.forEach(socket => {
                         this.updateSocket(socket);
                     });
                 }
                 this.sleepAndUpdate();
+            })
+            .catch(() => {
+                console.log('getData reject');
             })
         }
         else {

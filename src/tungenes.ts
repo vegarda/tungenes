@@ -51,6 +51,7 @@ export default class Tungenes {
 }
 
 
+
 if (process.env.NODE_ENV && process.env.NODE_ENV.toLowerCase() === 'production') {
     let tungenes: Tungenes = new Tungenes();
 }
