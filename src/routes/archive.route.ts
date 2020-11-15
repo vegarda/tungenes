@@ -24,7 +24,22 @@ const router = Router();
 
 router.get('/archive/:timeUnit/:amount', async (request: Request, response: Response) => {
 
-    console.log('get archive');
+    const id = Date.now();
+    console.log(id, 'get archive#############################################');
+
+    response.on('close',    () => console.log(id, 'response close'));
+    response.on('drain',    () => console.log(id, 'response drain'));
+    response.on('error',    () => console.log(id, 'response error'));
+    response.on('finish',   () => console.log(id, 'response finish'));
+    response.on('pipe',     () => console.log(id, 'response pipe'));
+    response.on('unpipe',   () => console.log(id, 'response unpipe'));
+
+    request.on('data',      () => console.log(id, 'request data'));
+    request.on('end',       () => console.log(id, 'request end'));
+    request.on('error',     () => console.log(id, 'request error'));
+    request.on('pause',     () => console.log(id, 'request pause'));
+    request.on('readable',  () => console.log(id, 'request readable'));
+    request.on('resume',    () => console.log(id, 'request resume'));
 
     const validParams: ValidParams = validateParams(request, response);
 
@@ -71,27 +86,50 @@ router.get('/archive/:timeUnit/:amount', async (request: Request, response: Resp
     ORDER BY dateTime ASC`;
 
     let queryIsEnded: boolean = false;
+    let poolConnection: PoolConnection;
 
-    mysqlPool.getConnection((mysqlError: MysqlError, poolConnection: PoolConnection) => {
-
-        setTimeout(() => {
-            if (!queryIsEnded) {
+    const requestTimeout = setTimeout(() => {
+        console.log(id, 'timeout queryIsEnded', queryIsEnded);
+        if (!queryIsEnded) {
+            if (poolConnection) {
+                // console.log(id, 'poolConnection.release()');
+                // poolConnection.release();
+                console.log(id, 'poolConnection.destroy()');
                 poolConnection.destroy();
             }
-        }, 5000);
+            response.sendStatus(500);
+        }
+    }, 5000);
 
-        request.on('close', () => {
-            if (!queryIsEnded) {
+
+    let poolConnectionThreadId = 0;
+    let requestIsClosed: boolean = false;
+
+    request.on('close', () => {
+        requestIsClosed = true;
+        clearTimeout(requestTimeout);
+        console.log(id, 'request close');
+        console.log(id, 'poolConnectionThreadId', poolConnectionThreadId);
+        console.log(id, 'queryIsEnded', queryIsEnded);
+        if (!queryIsEnded) {
+            if (poolConnection) {
+                console.log(id, 'poolConnection.destroy()');
                 poolConnection.destroy();
             }
-        });
+        }
+    });
 
-        poolConnection.on('connect',    () => console.log(poolConnection.threadId, 'poolConnection connect'));
-        poolConnection.on('drain',      () => console.log(poolConnection.threadId, 'poolConnection drain'));
-        poolConnection.on('end',        () => console.log(poolConnection.threadId, 'poolConnection end'));
-        poolConnection.on('enqueue',    () => console.log(poolConnection.threadId, 'poolConnection enqueue'));
-        poolConnection.on('error',      () => console.log(poolConnection.threadId, 'poolConnection error'));
-        poolConnection.on('fields',     () => console.log(poolConnection.threadId, 'poolConnection fields'));
+    mysqlPool.getConnection((mysqlError: MysqlError, _poolConnection: PoolConnection) => {
+
+        console.log(id, 'mysqlPool.getConnection() requestIsClosed', requestIsClosed);
+
+        if (requestIsClosed) {
+            _poolConnection.release();
+            return;
+        }
+
+        poolConnection = _poolConnection;
+        poolConnectionThreadId = _poolConnection.threadId;
 
         if (mysqlError) {
             console.error(mysqlError);
@@ -99,14 +137,26 @@ router.get('/archive/:timeUnit/:amount', async (request: Request, response: Resp
             return;
         }
 
-        const query = poolConnection.query(queryString, (_mysqlError: MysqlError, rows: Archive[], fields: FieldInfo[]) => {
+        const query = _poolConnection.query(queryString, (_mysqlError: MysqlError, rows: Archive[], fields: FieldInfo[]) => {
+
+            queryIsEnded = true;
+
+            console.log(poolConnectionThreadId, '_poolConnection.release()');
+            _poolConnection.release();
+            // console.log('_poolConnection.destroy()');
+            // _poolConnection.destroy();
+
             if (_mysqlError) {
                 console.error(_mysqlError);
                 response.sendStatus(500);
                 return;
             }
+
+            response.send(rows);
+
             const now  = Date.now();
             const expires = calculatedRequestTime.interval * 1000 / 2;
+
             if (useCache) {
                 cacheMap.set(cacheId, {
                     cacheDate: now,
@@ -117,11 +167,12 @@ router.get('/archive/:timeUnit/:amount', async (request: Request, response: Resp
                 });
                 console.log(`set cache, expires in ${ expires / 1000 }s`);
             }
-            response.send(rows);
-        });
 
-        query.on('end', () => {
-            queryIsEnded = true;
+            // response.send(rows);
+            // setTimeout(() => {
+
+            // }, 1000);
+
         });
 
     });
