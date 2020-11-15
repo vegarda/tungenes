@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "compile": "tsc",
-    "watch": "tsc-watch",
-    "nodemon": "nodemon dist/tungenes.js",
-    "start": "npm run compile && concurrently -k \"tsc -w\" \"nodemon dist/tungenes.js\""
+    "start": "tsc-watch --onSuccess \"ts-node dist/tungenes.js\""
   },
   "dependencies": {
     "compression": "^1.7.4",
@@ -26,8 +24,6 @@
     "@types/mysql": "^2.15.14",
     "@types/node": "^14.0.14",
     "@types/ws": "^7.2.6",
-    "concurrently": "^5.2.0",
-    "nodemon": "^2.0.4",
     "tsc-watch": "^4.2.9",
     "ts-node": "^9.0.0",
     "typescript": "^3.9.6"

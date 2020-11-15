@@ -5,7 +5,7 @@ import { ValidParams } from 'types';
 
 export function validateParams(req: Request, res: Response): ValidParams {
 
-    console.log('validateParams');
+    // console.log('validateParams');
 
     let params: ValidParams = {
         timeUnit: 'day',
@@ -32,7 +32,7 @@ export function validateParams(req: Request, res: Response): ValidParams {
         params.amount = 1;
     }
 
-    console.log(params);
+    // console.log(params);
 
     return params;
 

@@ -22,12 +22,12 @@ export function getRequestTime(timeUnit: string, amount: number): RequestTime {
     let today:     number = Math.floor(now / day) * day;
     let tomorrow:  number = today + day;
     let yesterday: number = today - day;
-  
-    if (timeUnit === 'yesterday'){
+
+    if (timeUnit === 'yesterday') {
         startTime = yesterday;
-        endTime = today;   
+        endTime = today;
     }
-    else if (timeUnit === "ytd"){
+    else if (timeUnit === 'ytd') {
         let date: Date = new Date();
         date.setUTCMonth(0);
         date.setUTCDate(0);
@@ -36,7 +36,7 @@ export function getRequestTime(timeUnit: string, amount: number): RequestTime {
         date.setUTCMilliseconds(0);
         startTime = date.valueOf();
     }
-    else{
+    else {
         let tempUnit: number = 0;
         switch (timeUnit) {
             case 'week':
@@ -80,4 +80,5 @@ export function getRequestTime(timeUnit: string, amount: number): RequestTime {
         endTime: endTime,
         interval: interval
     };
-  }
+
+}
