@@ -1,24 +1,51 @@
 import * as express from 'express';
 import * as http from 'http';
+import { MysqlError, Pool, PoolConnection } from 'mysql';
 import * as WebSocket from 'ws';
 
-import connection from './database';
+
+
+interface IConsoleData {
+    barometer?: number;
+    dateTime?: number;
+    dayRain?: number;
+    heatindex?: number;
+    outHumidity?: number;
+    outTemp?: number;
+    windDir?: number | null;
+    windGust?: number;
+    windGustDir?: number | null;
+    windSpeed?: number;
+}
 
 export default class DataSocket {
 
     private wss: WebSocket.Server;
     private openSockets: WebSocket[] = [];
+
     private consoleData: IConsoleData = {
         dateTime: 0
     };
 
-    constructor(private port: number = 800) {
+    private poolConnection: PoolConnection;
+
+    constructor(
+        private mysqlPool: Pool,
+        private port: number = 800,
+    ) {
         this.configWebSocket();
         this.waitForDbConnection();
     }
 
     private waitForDbConnection() {
-        connection.on('connection', () => this.updateSockets());
+        this.mysqlPool.getConnection((mysqlError: MysqlError, _poolConnection: PoolConnection) => {
+            if (mysqlError) {
+                return;
+            }
+            this.poolConnection = _poolConnection;
+            this.updateSockets();
+        });
+
     }
 
     private configWebSocket() {
@@ -48,7 +75,7 @@ export default class DataSocket {
 
         // console.log(wss);
         server.listen(this.port, () => {
-            console.log(`Server started on port ${(server.address() as WebSocket.AddressInfo).port} :)`);
+            console.log(`socket server started on port ${(server.address() as WebSocket.AddressInfo).port} :)`);
         });
 
     }
@@ -92,7 +119,7 @@ export default class DataSocket {
 
     private async getData(): Promise<IConsoleData>  {
         let promise: Promise<IConsoleData> = new Promise((resolve, reject) => {
-            connection.query('SELECT * from raw order by dateTime desc limit 1', (err, rows, fields) => {
+            this.poolConnection.query('SELECT * from raw order by dateTime desc limit 1', (err, rows, fields) => {
                 if (err) {
                     reject(null);
                 }
@@ -110,15 +137,3 @@ export default class DataSocket {
 
 }
 
-interface IConsoleData {
-    barometer?: number;
-    dateTime?: number;
-    dayRain?: number;
-    heatindex?: number;
-    outHumidity?: number;
-    outTemp?: number;
-    windDir?: number | null;
-    windGust?: number;
-    windGustDir?: number | null;
-    windSpeed?: number;
-}

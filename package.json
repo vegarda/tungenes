@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "compile": "tsc",
+    "watch": "tsc-watch",
     "start": "tsc-watch --onSuccess \"ts-node dist/tungenes.js\""
   },
   "dependencies": {
@@ -15,6 +16,7 @@
     "moment": "^2.29.0",
     "morgan": "~1.10.0",
     "mysql": "^2.18.1",
+    "rxjs": "^6.6.3",
     "ws": "^7.3.0"
   },
   "devDependencies": {

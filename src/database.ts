@@ -1,68 +1,106 @@
-import * as  mysql from 'mysql';
+import { createPool, MysqlError, Pool, PoolConnection } from 'mysql';
+import { first } from 'rxjs/operators';
+import { BetterPromise } from './promise';
 
-const mysqlPool = mysql.createPool({
-    host:     process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    user:     process.env.DB_USER,
-    password: process.env.DB_PASSWORD
-});
+interface CancelableQuery {
+    cancel(): void;
+}
 
-mysqlPool.on('acquire',     () => console.log('mysqlPool acquire'));
-mysqlPool.on('connection',  () => console.log('mysqlPool connection'));
-mysqlPool.on('enqueue',     () => console.log('mysqlPool enqueue'));
-mysqlPool.on('error',       () => console.log('mysqlPool error'));
-mysqlPool.on('release',     () => console.log('mysqlPool release'));
+class QueryPromise<T> implements CancelableQuery {
 
-let timeout = 250;
+    private queryIsEnded: boolean = false;
+    private queryIsCancelled: boolean = false;
 
-function makePromise(): Promise<mysql.MysqlError | mysql.PoolConnection> {
-    let promise = new Promise<mysql.MysqlError | mysql.PoolConnection>((resolve: (connection: mysql.PoolConnection) => void, reject: (connection: mysql.MysqlError) => void) => {
-        mysqlPool.getConnection( (mysqlError: mysql.MysqlError, mysqlPoolConnection: mysql.PoolConnection) => {
-            if (mysqlError) {
-                if (mysqlError.code === 'PROTOCOL_CONNECTION_LOST') {
-                    console.error('Database connection was closed.');
-                }
-                if (mysqlError.code === 'ER_CON_COUNT_ERROR') {
-                    console.error('Database has too many connections.');
-                }
-                if (mysqlError.code === 'ECONNREFUSED') {
-                    console.error('Database connection was refused.');
-                }
-                if (mysqlError.code === 'ETIMEDOUT') {
-                    console.error('Database connection timed out.');
-                }
-                reject(mysqlError);
-            }
-            if (mysqlPoolConnection) {
-                mysqlPoolConnection.release();
-                resolve(mysqlPoolConnection);
-            }
+    private poolConnection: PoolConnection;
+
+    private requestTimeout: NodeJS.Timeout;
+
+    public readonly promise: BetterPromise<T[]> = new BetterPromise();
+
+    constructor(
+        queryString: string,
+        mysqlPool: Pool,
+        timeout: number = 30000,
+    ) {
+
+        this.promise.onFulfilled$.pipe(first()).subscribe(() => {
+            clearTimeout(this.requestTimeout);
         });
-    });
-    return promise;
-}
 
-function getConnection() {
-    console.log('getConnection ' + timeout);
-    makePromise().then((connection: mysql.PoolConnection) => {
-        console.log('got connection to db');
-        timeout = 1000;
-    })
-    .catch((err: mysql.MysqlError) =>  {
-        // console.log(err);
-        timeout = timeout + timeout;
-        if (timeout > 32000) {
-            timeout = 32000;
-        }
-        setTimeout(() => {
-            getConnection();
+        this.requestTimeout = setTimeout(() => {
+            if (!this.queryIsEnded) {
+                if (this.poolConnection) {
+                    this.poolConnection.destroy();
+                }
+                this.promise.reject();
+            }
         }, timeout);
-    })
+
+        mysqlPool.getConnection((mysqlError: MysqlError, _poolConnection: PoolConnection) => {
+
+            if (this.queryIsCancelled) {
+                _poolConnection.release();
+                return;
+            }
+
+            this.poolConnection = _poolConnection;
+
+            if (mysqlError) {
+                this.promise.reject(mysqlError);
+                return;
+            }
+
+            const queryStartTime = Date.now();
+
+            const query = _poolConnection.query(queryString, (_mysqlError: MysqlError, rows: T[]) => {
+
+                this.queryIsEnded = true;
+
+                _poolConnection.release();
+
+                if (_mysqlError) {
+                    console.log('_mysqlError', _mysqlError);
+                    this.promise.reject(_mysqlError);
+                    return;
+                }
+
+                console.log('query time', (Date.now() - queryStartTime) / 1000);
+
+                this.promise.resolve(rows);
+
+            });
+
+        });
+    }
+
+    public cancel(): void {
+        if (!this.queryIsEnded) {
+            if (this.poolConnection) {
+                this.poolConnection.destroy();
+            }
+            this.promise.reject();
+        }
+    }
+
 }
 
-getConnection();
 
+export class DatabaseConnection {
 
-export default mysqlPool;
+    public readonly mysqlPool: Pool;
 
+    constructor() {
+        const mysqlPool = createPool({
+            host:     process.env.DB_HOST,
+            database: process.env.DB_NAME,
+            user:     process.env.DB_USER,
+            password: process.env.DB_PASSWORD
+        });
+        this.mysqlPool = mysqlPool;
+    }
 
+    public query<T>(queryString: string): QueryPromise<T> {
+        return new QueryPromise<T>(queryString, this.mysqlPool);
+    }
+
+}
