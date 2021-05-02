@@ -6,7 +6,7 @@ interface CancelableQuery {
     cancel(): void;
 }
 
-class QueryPromise<T> implements CancelableQuery {
+class Query<T> implements CancelableQuery {
 
     private queryIsEnded: boolean = false;
     private queryIsCancelled: boolean = false;
@@ -15,13 +15,23 @@ class QueryPromise<T> implements CancelableQuery {
 
     private requestTimeout: NodeJS.Timeout;
 
-    public readonly promise: BetterPromise<T[]> = new BetterPromise();
+    private readonly promise: BetterPromise<T[]> = new BetterPromise();
 
     constructor(
-        queryString: string,
-        mysqlPool: Pool,
-        timeout: number = 30000,
+        private queryString: string,
+        private mysqlPool: Pool,
+        private timeout: number = 30000,
     ) {
+        if (!queryString) {
+            throw new Error('!queryString');
+        }
+        if (!mysqlPool) {
+            throw new Error('!mysqlPool');
+        }
+        this.init();
+    }
+
+    private async init(): Promise<void> {
 
         this.promise.onFulfilled$.pipe(first()).subscribe(() => {
             clearTimeout(this.requestTimeout);
@@ -34,9 +44,11 @@ class QueryPromise<T> implements CancelableQuery {
                 }
                 this.promise.reject();
             }
-        }, timeout);
+        }, this.timeout);
 
-        mysqlPool.getConnection((mysqlError: MysqlError, _poolConnection: PoolConnection) => {
+        // await this.waitForPoolConnection();
+
+        this.mysqlPool.getConnection((mysqlError: MysqlError, _poolConnection: PoolConnection) => {
 
             if (this.queryIsCancelled) {
                 _poolConnection.release();
@@ -46,20 +58,22 @@ class QueryPromise<T> implements CancelableQuery {
             this.poolConnection = _poolConnection;
 
             if (mysqlError) {
+                this.queryIsEnded = true;
                 this.promise.reject(mysqlError);
                 return;
             }
 
             const queryStartTime = Date.now();
 
-            const query = _poolConnection.query(queryString, (_mysqlError: MysqlError, rows: T[]) => {
+            const query = _poolConnection.query(this.queryString, (_mysqlError: MysqlError, rows: T[]) => {
 
                 this.queryIsEnded = true;
 
                 _poolConnection.release();
 
                 if (_mysqlError) {
-                    console.log('_mysqlError', _mysqlError);
+                    console.error('_poolConnection.query()');
+                    // console.error(_mysqlError);
                     this.promise.reject(_mysqlError);
                     return;
                 }
@@ -72,6 +86,52 @@ class QueryPromise<T> implements CancelableQuery {
 
         });
     }
+
+    public getData(): Promise<T[]> {
+        return this.promise;
+    }
+
+    public getValue(): Promise<T[]> {
+        return this.promise;
+    }
+
+    public get data(): T[] {
+        return this.promise.value;
+    }
+
+    public get value(): T[] {
+        return this.promise.value;
+    }
+
+    // private getPoolConnection(): Promise<PoolConnection> {
+    //     return new Promise((resolve, reject) => {
+    //         this.mysqlPool.getConnection((mysqlError: MysqlError, poolConnection: PoolConnection) => {
+    //             if (mysqlError) {
+    //                 reject(mysqlError);
+    //                 return;
+    //             }
+    //             resolve(poolConnection);
+    //         });
+    //     });
+    // }
+
+    // private async waitForPoolConnection(): Promise<void> {
+    //     // if (this.poolConnection) {
+    //     //     return;
+    //     // }
+    //     const getPoolConnection = async () => {
+    //         try {
+    //             this.poolConnection = await this.getPoolConnection();
+    //             console.log(this.poolConnection);
+    //         }
+    //         catch (error) {
+    //             return getPoolConnection();
+    //         }
+    //     }
+    //     while(!this.poolConnection) {
+    //         await getPoolConnection();
+    //     }
+    // };
 
     public cancel(): void {
         if (!this.queryIsEnded) {
@@ -96,11 +156,12 @@ export class DatabaseConnection {
             user:     process.env.DB_USER,
             password: process.env.DB_PASSWORD
         });
+        console.log(mysqlPool);
         this.mysqlPool = mysqlPool;
     }
 
-    public query<T>(queryString: string): QueryPromise<T> {
-        return new QueryPromise<T>(queryString, this.mysqlPool);
+    public query<T>(queryString: string): Query<T> {
+        return new Query<T>(queryString, this.mysqlPool);
     }
 
 }

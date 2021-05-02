@@ -55,20 +55,20 @@ export class Route<ResponseData> {
         timeUnit = timeUnit.toLowerCase();
 
         let startTime: number = 0;
-        let endTime:   number = 0;
-        let interval:  number = 0;
+        let endTime:     number = 0;
+        let interval:    number = 0;
 
         let now: number = Date.now() / 1000;
 
         let minute: number = 60
-        let hour:   number = 60 * 60;
+        let hour:     number = 60 * 60;
         let day:    number = hour * 24;
-        let week:   number = day * 7;
-        let month:  number = week * 4;
-        let year:   number = month * 12;
+        let week:     number = day * 7;
+        let month:    number = week * 4;
+        let year:     number = month * 12;
 
         let today:     number = Math.floor(now / day) * day;
-        let tomorrow:  number = today + day;
+        let tomorrow:    number = today + day;
         let yesterday: number = today - day;
 
         if (timeUnit === 'yesterday') {
@@ -88,16 +88,16 @@ export class Route<ResponseData> {
             let tempUnit: number = 0;
             switch (timeUnit) {
                 case 'week':
-                    tempUnit =  week;
+                    tempUnit =    week;
                     break;
                 case 'month':
-                    tempUnit =  month;
+                    tempUnit =    month;
                     break;
                 case 'year':
-                    tempUnit =  year;
+                    tempUnit =    year;
                     break;
                 default:
-                    tempUnit =  day;
+                    tempUnit =    day;
                     break;
             }
             startTime = tomorrow - (amount * tempUnit);
@@ -108,16 +108,16 @@ export class Route<ResponseData> {
 
         switch (timeUnit) {
             case 'week':
-                interval =  1 * hour;
+                interval =    1 * hour;
                 break;
             case 'month':
-                interval =  6 * hour;
+                interval =    6 * hour;
                 break;
             case 'year':
-                interval =  day;
+                interval =    day;
                 break;
             default:
-                interval =  30 * minute;
+                interval =    30 * minute;
                 break;
         }
 
@@ -193,21 +193,21 @@ export class MultiQueryRoute<ResponseData, QueryData = ResponseData> extends Rou
         }
 
         const queryStrings = this.getQueryStrings(calculatedRequestTime);
-        const queryPromises = queryStrings.map(queryString => this.databaseConnection.query<QueryData>(queryString));
+        const queries = queryStrings.map(queryString => this.databaseConnection.query<QueryData>(queryString));
 
         request.on('close', () => {
-            queryPromises.forEach(qp => qp.cancel());
+            queries.forEach(qp => qp.cancel());
         });
 
 
         try {
-            const value = await Promise.all(queryPromises.map(qp => qp.promise));
+            const value = await Promise.all(queries.map(qp => qp.getData()));
             // const convertedData = value.map(v => this.convertQueryData(v));
             const convertedData = this.convertQueriesData(value as unknown as QueryData[]);
 
             response.send(convertedData);
 
-            const now  = Date.now();
+            const now    = Date.now();
             const cacheExpiresAt = now + ((calculatedRequestTime.interval * 1000) / 2);
 
             this.dataCache.setData(cacheId, {

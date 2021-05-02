@@ -1,3 +1,4 @@
+import { DatabaseConnection } from 'database';
 import * as express from 'express';
 import * as http from 'http';
 import { MysqlError, Pool, PoolConnection } from 'mysql';
@@ -27,26 +28,66 @@ export default class DataSocket {
         dateTime: 0
     };
 
-    private poolConnection: PoolConnection;
+    // private poolConnection: PoolConnection;
 
     constructor(
-        private mysqlPool: Pool,
+        private databaseConnection: DatabaseConnection,
         private port: number = 800,
     ) {
+        this.init();
+    }
+
+    private async init(): Promise<void> {
         this.configWebSocket();
-        this.waitForDbConnection();
+        // await this.waitForDatabaseConnection();
+        this.updateSockets();
     }
 
-    private waitForDbConnection() {
-        this.mysqlPool.getConnection((mysqlError: MysqlError, _poolConnection: PoolConnection) => {
-            if (mysqlError) {
-                return;
-            }
-            this.poolConnection = _poolConnection;
-            this.updateSockets();
-        });
+    // private _getDatabaseConnection(): Promise<PoolConnection> {
+    //     return new Promise((resolve, reject) => {
+    //         this.mysqlPool.getConnection((mysqlError: MysqlError, poolConnection: PoolConnection) => {
+    //             if (mysqlError) {
+    //                 // console.log('mysqlError');
+    //                 // console.log(mysqlError);
+    //                 reject(mysqlError);
+    //                 return;
+    //             }
+    //             resolve(poolConnection);
+    //         });
+    //     });
+    // }
 
-    }
+    // private getDatabaseConnection(): Promise<void> {
+    //     return new Promise((resolve) => {
+    //         this.mysqlPool.getConnection((mysqlError: MysqlError, _poolConnection: PoolConnection) => {
+    //             if (mysqlError) {
+    //                 console.log('mysqlError');
+    //                 console.log(mysqlError);
+    //                 return this.getDatabaseConnection();
+    //             }
+    //             this.poolConnection = _poolConnection;
+    //             resolve();
+    //         });
+    //     });
+    // }
+
+    // private async waitForDatabaseConnection(): Promise<void> {
+    //     if (this.poolConnection) {
+    //         return;
+    //     }
+    //     const getDatabaseConnection = async () => {
+    //         try {
+    //             this.poolConnection = await this._getDatabaseConnection();
+    //             console.log(this.poolConnection);
+    //         }
+    //         catch (error) {
+    //             return getDatabaseConnection();
+    //         }
+    //     }
+    //     while(!this.poolConnection) {
+    //         await getDatabaseConnection();
+    //     }
+    // };
 
     private configWebSocket() {
         console.log('configWebSocket');
@@ -81,23 +122,27 @@ export default class DataSocket {
     }
 
     private async updateSockets() {
-        if (this.openSockets.length > 0) {
-            this.getData().then(async (data) => {
+        console.log('updateSockets');
+        if (this.openSockets.length > 0 || true) {
+            try {
+                const data = await this.getData();
+                // console.log(data);
                 if (this.consoleData.dateTime < data.dateTime) {
                     this.consoleData = data;
                     this.openSockets.forEach(socket => {
                         this.updateSocket(socket);
                     });
                 }
-                this.sleepAndUpdate();
-            })
-            .catch(() => {
-                console.log('getData reject');
-            })
+            }
+            catch (error) {
+                console.error('getData reject');
+                if (error) {
+                    console.error(error.name);
+                    console.error(error.message);
+                }
+            }
         }
-        else {
-            this.sleepAndUpdate();
-        }
+        this.sleepAndUpdate();
     }
 
     private async sleepAndUpdate() {
@@ -117,22 +162,14 @@ export default class DataSocket {
         });
     }
 
-    private async getData(): Promise<IConsoleData>  {
-        let promise: Promise<IConsoleData> = new Promise((resolve, reject) => {
-            this.poolConnection.query('SELECT * from raw order by dateTime desc limit 1', (err, rows, fields) => {
-                if (err) {
-                    reject(null);
-                }
-                if (rows && rows[0]) {
-                    resolve(rows[0]);
-                }
-                else {
-                    reject(null);
-                }
-            });
-
-        });
-        return promise;
+    private async getData(): Promise<IConsoleData> {
+        const rawDataQueryString = 'SELECT * from raw order by dateTime desc limit 1';
+        const rawDataQuery = this.databaseConnection.query<IConsoleData>(rawDataQueryString);
+        const rawData = await rawDataQuery.getData();
+        if (rawData) {
+            return rawData[0];
+        }
+        return null;
     }
 
 }

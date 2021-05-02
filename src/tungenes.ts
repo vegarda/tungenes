@@ -40,7 +40,7 @@ export default class Tungenes {
     }
 
     private addDataSocket() {
-        this.dataSocket = new DataSocket(this.databaseConnection.mysqlPool);
+        this.dataSocket = new DataSocket(this.databaseConnection);
     }
 
     private addRoutes(): void {

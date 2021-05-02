@@ -34,7 +34,7 @@ class HiLo {
 type HiLoProperty = keyof HiLo;
 
 
-type HiLoQueryResponse =  {
+type HiLoQueryResponse =    {
     dateTime: number;
     property: HiLoProperty;
     value: number;

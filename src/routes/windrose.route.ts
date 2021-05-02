@@ -44,11 +44,10 @@ export class WindroseRoute extends QueryRoute<WindResponseData, WindQueryData[]>
     }
 
     protected convertQueryData(querydata: WindQueryData[]): WindResponseData {
-        console.log('convertQueryData', querydata);
 
         const windResposeData: WindResponseData = {
             windFrequency : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            windVelocity  : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            windVelocity    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             windVector    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         }
 
