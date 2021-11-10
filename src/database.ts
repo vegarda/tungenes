@@ -156,7 +156,7 @@ export class DatabaseConnection {
             user:     process.env.DB_USER,
             password: process.env.DB_PASSWORD
         });
-        console.log(mysqlPool);
+        // console.log(mysqlPool);
         this.mysqlPool = mysqlPool;
     }
 

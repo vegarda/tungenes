@@ -44,8 +44,8 @@ type HiLoQueryResponse =    {
 
 export class HiLoRoute extends MultiQueryRoute<HiLo, HiLoQueryResponse[]> {
 
-    public static readonly routeName: string = 'hilo';
-    public static readonly route: string = '/api/hilo/:timeUnit/:amount';
+    public static readonly routeName = 'hilo';
+    public static readonly route = '/api/hilo/:timeUnit/:amount';
 
     public static readonly avgProperties: ReadonlyArray<HiLoProperty> = [
         'outTemp',

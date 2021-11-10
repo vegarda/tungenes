@@ -6,6 +6,10 @@ import * as compression from 'compression';
 import * as debug from 'debug';
 import * as cors from 'cors';
 
+import fastifyInstanceBuilder, { FastifyInstance } from 'fastify';
+import fastifyCors from 'fastify-cors';
+import fastifyCompression from 'fastify-compress';
+
 import DataSocket from './data-socket';
 
 
@@ -17,19 +21,49 @@ import { DatabaseConnection } from './database';
 
 export default class Tungenes {
 
+    private _fastify: FastifyInstance;
     private express: express.Application;
     private dataSocket: DataSocket;
 
     private databaseConnection: DatabaseConnection;
 
-    constructor(private port: number = 80) {
+    constructor(
+        private port: number = 80,
+    ) {
         console.log('Tungenes', this.port);
+
         this.databaseConnection = new DatabaseConnection();
-        this.express = express();
-        this.configExpress();
-        this.addRoutes();
-        this.express.listen(this.port);
-        this.addDataSocket();
+
+        this._fastify = fastifyInstanceBuilder();
+
+        this.configFastify();
+
+        // return;
+        // this.express = express();
+        // this.configExpress();
+        // this.addRoutes();
+        // this.express.listen(this.port);
+        // this.addDataSocket();
+
+    }
+
+    private configFastifyCors(): void {
+        const options = {
+
+        }
+        this._fastify.register(fastifyCors, options);
+    }
+
+    private configFastifyCompression(): void {
+        const options = {
+
+        }
+        this._fastify.register(fastifyCompression, options);
+    }
+
+    private configFastify(): void {
+        this.configFastifyCors();
+        this.configFastifyCompression();
     }
 
     private configExpress(): void {
@@ -46,9 +80,9 @@ export default class Tungenes {
     private addRoutes(): void {
         console.log('Tungenes.addRoutes()');
         const archiveRoute = new ArchiveRoute(this.express, this.databaseConnection);
-        const windroseRoute = new WindroseRoute(this.express, this.databaseConnection);
-        const windrose10Route = new Windrose10Route(this.express, this.databaseConnection);
-        const hiLoRoute = new HiLoRoute(this.express, this.databaseConnection);
+        // const windroseRoute = new WindroseRoute(this.express, this.databaseConnection);
+        // const windrose10Route = new Windrose10Route(this.express, this.databaseConnection);
+        // const hiLoRoute = new HiLoRoute(this.express, this.databaseConnection);
     }
 
 }

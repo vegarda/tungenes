@@ -21,8 +21,8 @@ interface WindResponseData {
 
 export class WindroseRoute extends QueryRoute<WindResponseData, WindQueryData[]> {
 
-    public static readonly routeName: string = 'windrose';
-    public static readonly route: string = '/api/windrose/:timeUnit/:amount';
+    public static readonly routeName = 'windrose';
+    public static readonly route = '/api/windrose/:timeUnit/:amount';
 
     constructor(
         express: Application,

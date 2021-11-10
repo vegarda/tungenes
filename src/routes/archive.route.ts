@@ -26,8 +26,8 @@ export type ArchiveProperty = Exclude<keyof ArchiveData, 'dateTime'>;
 
 export class ArchiveRoute extends QueryRoute<ArchiveData[]> {
 
-    public static readonly routeName: string = 'archive';
-    public static readonly route: string = '/api/archive/:timeUnit/:amount';
+    public static readonly routeName = 'archive';
+    public static readonly route = '/api/archive/:timeUnit/:amount';
 
     constructor(
         express: Application,
