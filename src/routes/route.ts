@@ -1,260 +1,77 @@
-import { DatabaseConnection } from 'database';
-import { Request, RequestHandler, Response, Application } from 'express';
+import { FastifyReply, FastifyRequest, HTTPMethods, RouteHandlerMethod } from 'fastify';
 
-import { DataCache } from './../data-cache';
+import { DataMethods } from 'database';
+import { DataCache } from '../utils/data-cache';
+import { RequestTimeParams } from '../utils/request-time-params';
 
 
-export interface ValidParams {
-    timeUnit: string;
-    amount: number;
-}
+export abstract class Route<ResponseData = unknown> {
 
-export interface RequestTime {
-    startTime: number;
-    endTime: number;
-    interval: number;
-}
+    public static readonly method: HTTPMethods | HTTPMethods[];
+    public static readonly route: string;
 
-export class Route<ResponseData> {
+    public readonly method: HTTPMethods | HTTPMethods[];
+    public readonly route: string;
 
-    public static validateParams(request: Request, respones: Response): ValidParams {
+    protected dataCache: DataCache<ResponseData>;
 
-        const params: ValidParams = {
-            timeUnit: 'day',
-            amount: 1
-        };
-
-        const allowedTimeUnits: string[] = ['yesterday', 'day', 'week', 'month', 'year', 'ytd'];
-
-        try {
-            params.amount = Number(request.params.amount);
-            params.timeUnit = request.params.timeUnit.toLowerCase();
+    constructor() {
+        this.route = (Object.getPrototypeOf(this).constructor as typeof Route).route;
+        if (!this.route) {
+            throw new Error('static Route.route missing');
         }
-        catch (err) {
-            respones.sendStatus(400);
-            return null;
+        this.method = (Object.getPrototypeOf(this).constructor as typeof Route).method;
+        if (!this.method) {
+            throw new Error('static Route.method missing');
         }
-
-        if (allowedTimeUnits.indexOf(params.timeUnit) < 0) {
-            respones.sendStatus(400);
-            return null;
-        }
-
-        if (params.amount < 1) {
-            params.amount = 1;
-        }
-
-        // console.log(params);
-
-        return params;
-
     }
 
-    public static getRequestTime(timeUnit: string, amount: number): RequestTime {
+    public abstract getHandler(dataMethods: DataMethods): RouteHandlerMethod;
 
-        timeUnit = timeUnit.toLowerCase();
-
-        let startTime: number = 0;
-        let endTime:     number = 0;
-        let interval:    number = 0;
-
-        let now: number = Date.now() / 1000;
-
-        let minute: number = 60
-        let hour:     number = 60 * 60;
-        let day:    number = hour * 24;
-        let week:     number = day * 7;
-        let month:    number = week * 4;
-        let year:     number = month * 12;
-
-        let today:     number = Math.floor(now / day) * day;
-        let tomorrow:    number = today + day;
-        let yesterday: number = today - day;
-
-        if (timeUnit === 'yesterday') {
-            startTime = yesterday;
-            endTime = today;
+    public getCachedDataForRequestTimeParams(rtp: RequestTimeParams): ResponseData | null {
+        if (this.dataCache) {
+            return this.dataCache.getDataForRequestTimeParams(rtp);
         }
-        else if (timeUnit === 'ytd') {
-            let date: Date = new Date();
-            date.setUTCMonth(0);
-            date.setUTCDate(0);
-            date.setUTCMinutes(0);
-            date.setUTCSeconds(0);
-            date.setUTCMilliseconds(0);
-            startTime = date.valueOf();
+        return null;
+    }
+
+    public setCachedDataForRequestTimeParams(data: ResponseData, rtp: RequestTimeParams): void {
+        if (this.dataCache) {
+            return this.dataCache.setDataForRequestTimeParams(rtp, data);
         }
-        else {
-            let tempUnit: number = 0;
-            switch (timeUnit) {
-                case 'week':
-                    tempUnit =    week;
-                    break;
-                case 'month':
-                    tempUnit =    month;
-                    break;
-                case 'year':
-                    tempUnit =    year;
-                    break;
-                default:
-                    tempUnit =    day;
-                    break;
+    }
+
+}
+
+
+export abstract class DataRoute<QueryData, ResponseData = QueryData> extends Route<ResponseData> {
+
+    public abstract getData(dataMethods: DataMethods, rtp: RequestTimeParams, signal?: AbortSignal): Promise<ResponseData>;
+
+    public getHandler(dataMethods: DataMethods): RouteHandlerMethod {
+
+        return async (request: FastifyRequest, reply: FastifyReply) => {
+
+            const rtp = RequestTimeParams.fromParams(request.params);
+
+            const cachedValue = this.getCachedDataForRequestTimeParams(rtp);
+            if (cachedValue) {
+                reply.send(cachedValue);
+                return;
             }
-            startTime = tomorrow - (amount * tempUnit);
-        }
-        if (!endTime) {
-            endTime = tomorrow;
-        }
 
-        switch (timeUnit) {
-            case 'week':
-                interval =    1 * hour;
-                break;
-            case 'month':
-                interval =    6 * hour;
-                break;
-            case 'year':
-                interval =    day;
-                break;
-            default:
-                interval =    30 * minute;
-                break;
-        }
+            const abortController = new AbortController();
+            request.raw.once('end', () => abortController.abort());
 
-        interval = interval * Math.ceil(amount / 2);
+            const data = await this.getData(dataMethods, rtp, abortController.signal);
+            this.setCachedDataForRequestTimeParams(data, rtp);
 
-        return <RequestTime>{
-            startTime: startTime,
-            endTime: endTime,
-            interval: interval
+            reply.send(data);
+
         };
 
     }
-
-    public static readonly routeName: string;
-    public readonly routeName: string;
-
-    protected dataCache = new DataCache<ResponseData>();
-
-    constructor(
-        route: string,
-        express: Application,
-    ) {
-        this.routeName = (Object.getPrototypeOf(this).constructor as typeof QueryRoute).routeName;
-        if (!this.routeName) {
-            throw new Error('!routeName');
-        }
-
-    }
-
-    protected requestHandler: RequestHandler = async (request: Request, response: Response) => {
-        console.log('requestHandler1');
-        throw new Error('requestHandler not implemented');
-    }
-
-}
-
-
-export class MultiQueryRoute<ResponseData, QueryData = ResponseData> extends Route<ResponseData> {
-
-    constructor(
-        route: string,
-        express: Application,
-        protected databaseConnection: DatabaseConnection,
-    ) {
-        super(route, express);
-        express.use(route, this.requestHandler);
-    }
-
-    protected convertQueriesData(queryData: QueryData[]): ResponseData {
-        return queryData as unknown as ResponseData;
-    }
-
-    protected getQueryStrings(requestTime: RequestTime): string[] {
-        throw new Error('getQueryStrings not implemented');
-    }
-
-    protected requestHandler: RequestHandler = async (request: Request, response: Response) => {
-
-        const validParams: ValidParams = QueryRoute.validateParams(request, response);
-        if (!validParams) {
-            return;
-        }
-
-        const calculatedRequestTime: RequestTime = QueryRoute.getRequestTime(validParams.timeUnit, validParams.amount);
-
-        const cacheId = validParams.amount * calculatedRequestTime.interval * calculatedRequestTime.startTime;
-
-        const cachedValue = this.dataCache.getData(cacheId);
-        if (cachedValue) {
-            cachedValue
-            response.send(cachedValue);
-            return;
-        }
-
-        const queryStrings = this.getQueryStrings(calculatedRequestTime);
-        const queries = queryStrings.map(queryString => this.databaseConnection.query<QueryData>(queryString));
-
-        request.on('close', () => {
-            queries.forEach(qp => qp.cancel());
-        });
-
-
-        try {
-            const value = await Promise.all(queries.map(qp => qp.getData()));
-            // const convertedData = value.map(v => this.convertQueryData(v));
-            const convertedData = this.convertQueriesData(value as unknown as QueryData[]);
-
-            response.send(convertedData);
-
-            const now    = Date.now();
-            const cacheExpiresAt = now + ((calculatedRequestTime.interval * 1000) / 2);
-
-            this.dataCache.setData(cacheId, {
-                cacheDate: now,
-                params: validParams,
-                requestTime: calculatedRequestTime,
-                data: convertedData,
-                expiresAt: cacheExpiresAt,
-            });
-        }
-        catch (error) {
-            console.error(error);
-            response.status(500).send(null);
-        }
-
-    }
-
 }
 
 
 
-export class QueryRoute<ResponseData, QueryData = ResponseData> extends MultiQueryRoute<ResponseData, QueryData> {
-
-    constructor(
-        route: string,
-        express: Application,
-        protected databaseConnection: DatabaseConnection,
-    ) {
-        super(route, express, databaseConnection);
-        express.use(route, this.requestHandler);
-    }
-
-    protected convertQueriesData(queryData: QueryData[]): ResponseData {
-        return this.convertQueryData(queryData[0]);
-    }
-
-    protected convertQueryData(queryData: QueryData): ResponseData {
-        return queryData as unknown as ResponseData;
-    }
-
-    protected getQueryString(requestTime: RequestTime): string {
-        throw new Error('getQueryString not implemented');
-    }
-
-    protected getQueryStrings(requestTime: RequestTime): string[] {
-        return [this.getQueryString(requestTime)];
-    }
-
-
-}

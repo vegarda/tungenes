@@ -16,10 +16,14 @@
     "fastify": "^3.23.1",
     "fastify-compress": "^3.6.1",
     "fastify-cors": "^6.0.2",
+    "knex": "^0.95.14",
     "koa": "^2.13.4",
+    "mariadb": "^2.5.5",
     "morgan": "~1.10.0",
     "mysql": "^2.18.1",
+    "mysql2": "^2.3.3-rc.0",
     "rxjs": "^7.4.0",
+    "sequelize": "^6.9.0",
     "ws": "^8.2.3"
   },
   "devDependencies": {

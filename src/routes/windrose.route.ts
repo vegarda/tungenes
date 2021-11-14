@@ -1,10 +1,11 @@
-import { DatabaseConnection } from 'database';
-import { Application } from 'express';
-import { Pool } from 'mysql';
 
-import { RequestTime } from './../types';
+import { Archive } from '../data/archive';
+import { DataMethods } from '../database';
+import { amountParamName, timeUnitParamName } from '../models/route';
+import { RequestTimeParams } from '../utils/request-time-params';
+import { DataRoute } from './route';
 
-import { QueryRoute } from './route';
+
 
 interface WindQueryData {
     dateTime: number;
@@ -19,36 +20,22 @@ interface WindResponseData {
 }
 
 
-export class WindroseRoute extends QueryRoute<WindResponseData, WindQueryData[]> {
+export class WindroseRoute extends DataRoute<Archive, WindResponseData> {
 
-    public static readonly routeName = 'windrose';
-    public static readonly route = '/api/windrose/:timeUnit/:amount';
+    public static readonly method = `GET`;
+    public static readonly route = `/api/windrose/:${ timeUnitParamName }/:${ amountParamName }`;
 
-    constructor(
-        express: Application,
-        databaseConnection: DatabaseConnection,
-    ) {
-        super(WindroseRoute.route, express, databaseConnection);
+    public async getData(dataMethods: DataMethods, rtp: RequestTimeParams, signal?: AbortSignal): Promise<WindResponseData> {
+        const data = await dataMethods.getArchiveData(rtp, signal);
+        return this.convertData(data);
     }
 
-    protected getQueryString(requestTime: RequestTime): string {
-        return `
-        SELECT
-        dateTime,
-        ROUND(MAX(windSpeed), 1) windSpeed,
-        ROUND(MAX(windDir), 1) windDir
-        FROM weewx.archive
-        WHERE dateTime >= ${ requestTime.startTime } AND dateTime <= ${ requestTime.endTime }
-        GROUP BY dateTime
-        ORDER BY dateTime ASC`;
-    }
-
-    protected convertQueryData(querydata: WindQueryData[]): WindResponseData {
+    protected convertData(querydata: Archive[]): WindResponseData {
 
         const windResposeData: WindResponseData = {
-            windFrequency : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            windVelocity    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            windVector    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            windFrequency: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            windVelocity: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            windVector: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         }
 
         const windFrequency = windResposeData.windFrequency;
@@ -79,3 +66,4 @@ export class WindroseRoute extends QueryRoute<WindResponseData, WindQueryData[]>
     };
 
 }
+

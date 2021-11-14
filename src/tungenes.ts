@@ -1,12 +1,8 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-import * as express from 'express';
-import * as compression from 'compression';
-import * as debug from 'debug';
-import * as cors from 'cors';
 
-import fastifyInstanceBuilder, { FastifyInstance } from 'fastify';
+import fastifyInstanceBuilder, { FastifyInstance, HTTPMethods } from 'fastify';
 import fastifyCors from 'fastify-cors';
 import fastifyCompression from 'fastify-compress';
 
@@ -16,16 +12,31 @@ import DataSocket from './data-socket';
 import { ArchiveRoute } from './routes/archive.route';
 import { HiLoRoute } from './routes/hilo.route';
 import { WindroseRoute } from './routes/windrose.route';
-import { Windrose10Route } from './routes/windrose10.route';
-import { DatabaseConnection } from './database';
+// import { Windrose10Route } from './routes/windrose10.route';
+import { Database, DatabaseCacher, DatabaseConnection, DataMethods } from './database';
+import { Route } from 'routes/route';
+
+export declare interface Type<T> extends Function {
+    new (...args: any[]): T;
+}
+
+
+/**
+ * todo
+ *
+ *
+ */
 
 export default class Tungenes {
 
     private _fastify: FastifyInstance;
-    private express: express.Application;
     private dataSocket: DataSocket;
 
     private databaseConnection: DatabaseConnection;
+    private database: Database;
+    private databaseCacher: DatabaseCacher;
+    private dataMethods: DataMethods;
+
 
     constructor(
         private port: number = 80,
@@ -33,17 +44,15 @@ export default class Tungenes {
         console.log('Tungenes', this.port);
 
         this.databaseConnection = new DatabaseConnection();
-
-        this._fastify = fastifyInstanceBuilder();
+        this.database = new Database(this.databaseConnection);
+        this.databaseCacher = new DatabaseCacher(this.database);
+        this.dataMethods = this.databaseCacher;
 
         this.configFastify();
 
-        // return;
-        // this.express = express();
-        // this.configExpress();
-        // this.addRoutes();
-        // this.express.listen(this.port);
-        // this.addDataSocket();
+        this.addRoutes();
+
+        this.addDataSocket();
 
     }
 
@@ -62,34 +71,47 @@ export default class Tungenes {
     }
 
     private configFastify(): void {
+        if (this._fastify) {
+            return;
+        }
+        this._fastify = fastifyInstanceBuilder();
+        this._fastify.setErrorHandler((error, request, reply) => {
+            console.error(error);
+            reply.send();
+        });
+        this._fastify.listen(this.port);
         this.configFastifyCors();
         this.configFastifyCompression();
     }
 
-    private configExpress(): void {
-        console.log('Tungenes.configExpress()');
-        this.express.use(compression());
-        this.express.use(cors());
-        // this.express.use(debug());
-    }
 
     private addDataSocket() {
-        this.dataSocket = new DataSocket(this.databaseConnection);
+        this.dataSocket = new DataSocket(this.dataMethods);
+    }
+
+    private addRoute(route: Type<Route>): void {
+        const _route = new route();
+        this._fastify.route({
+            method: _route.method,
+            url: _route.route,
+            handler: _route.getHandler(this.dataMethods),
+        });
     }
 
     private addRoutes(): void {
         console.log('Tungenes.addRoutes()');
-        const archiveRoute = new ArchiveRoute(this.express, this.databaseConnection);
-        // const windroseRoute = new WindroseRoute(this.express, this.databaseConnection);
-        // const windrose10Route = new Windrose10Route(this.express, this.databaseConnection);
-        // const hiLoRoute = new HiLoRoute(this.express, this.databaseConnection);
+
+        this.addRoute(ArchiveRoute);
+        this.addRoute(HiLoRoute);
+        this.addRoute(WindroseRoute);
+
     }
 
 }
 
 
-
-if (process.env.NODE_ENV && process.env.NODE_ENV.toLowerCase() === 'production') {
+const isProduction = process.env.NODE_ENV && process.env.NODE_ENV.toLowerCase() === 'production';
+if (isProduction) {
     const tungenes: Tungenes = new Tungenes();
 }
 else {
