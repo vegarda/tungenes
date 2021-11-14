@@ -1,24 +1,27 @@
 {
-    "compileOnSave": true,
-    "compilerOptions": {
-        "allowJs": true,
-        "lib": [
-            "ES2019",
-        ],
-        "target": "ES2019",
-        "module": "CommonJS",
-        "moduleResolution": "Node",
-        // "noImplicitAny": true,
-        "removeComments": true,
-        "sourceMap": true,
-        "outDir": "./dist",
-        "baseUrl": "./src",
-    },
-    "include": [
-        "./src/**/*.ts",
+  "compileOnSave": true,
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": [
+      "ESNext",
+      "DOM"
     ],
-    "exclude": [
-        "dist",
-        "node_modules",
+    "target": "ES2019",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "removeComments": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "types": [
+      "node"
     ]
+  },
+  "include": [
+    "./src/**/*.ts",
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+  ]
 }

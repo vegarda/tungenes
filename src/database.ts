@@ -1,12 +1,15 @@
-import { createPool, MysqlError, Pool, PoolConnection } from 'mysql';
-import { first } from 'rxjs/operators';
-import { BetterPromise } from './promise';
+import { createPool, Pool, PoolConnection, QueryError } from 'mysql2';
+import { take } from 'rxjs';
 
-interface CancelableQuery {
-    cancel(): void;
-}
+import { DataCache } from './utils/data-cache';
+import { RequestTimeParams } from './utils/request-time-params';
+import { BetterPromise } from './utils/promise';
 
-class Query<T> implements CancelableQuery {
+import { Archive } from './data/archive';
+import { Raw } from './data/raw';
+
+
+class Query<T> {
 
     private queryIsEnded: boolean = false;
     private queryIsCancelled: boolean = false;
@@ -15,13 +18,14 @@ class Query<T> implements CancelableQuery {
 
     private requestTimeout: NodeJS.Timeout;
 
-    private readonly promise: BetterPromise<T[]> = new BetterPromise();
+    private promise: BetterPromise<T[]>;
 
     constructor(
         private queryString: string,
         private mysqlPool: Pool,
         private timeout: number = 30000,
     ) {
+        console.log('Query');
         if (!queryString) {
             throw new Error('!queryString');
         }
@@ -33,7 +37,9 @@ class Query<T> implements CancelableQuery {
 
     private async init(): Promise<void> {
 
-        this.promise.onFulfilled$.pipe(first()).subscribe(() => {
+        this.promise = new BetterPromise<T[]>();
+
+        this.promise.onFulfilled$.pipe(take(1)).subscribe(() => {
             clearTimeout(this.requestTimeout);
         });
 
@@ -46,9 +52,7 @@ class Query<T> implements CancelableQuery {
             }
         }, this.timeout);
 
-        // await this.waitForPoolConnection();
-
-        this.mysqlPool.getConnection((mysqlError: MysqlError, _poolConnection: PoolConnection) => {
+        this.mysqlPool.getConnection((mysqlError: QueryError, _poolConnection: PoolConnection) => {
 
             if (this.queryIsCancelled) {
                 _poolConnection.release();
@@ -65,16 +69,17 @@ class Query<T> implements CancelableQuery {
 
             const queryStartTime = Date.now();
 
-            const query = _poolConnection.query(this.queryString, (_mysqlError: MysqlError, rows: T[]) => {
+            const query = _poolConnection.query(this.queryString, (queryError: QueryError, rows: T[]) => {
 
                 this.queryIsEnded = true;
 
                 _poolConnection.release();
 
-                if (_mysqlError) {
-                    console.error('_poolConnection.query()');
-                    // console.error(_mysqlError);
-                    this.promise.reject(_mysqlError);
+                if (queryError) {
+                    // console.error('_poolConnection.query()');
+                    console.error(this.queryString);
+                    console.error('QueryError', queryError);
+                    this.promise.reject(queryError);
                     return;
                 }
 
@@ -87,63 +92,28 @@ class Query<T> implements CancelableQuery {
         });
     }
 
-    public getData(): Promise<T[]> {
+    public getValue(): BetterPromise<T[]> {
         return this.promise;
-    }
-
-    public getValue(): Promise<T[]> {
-        return this.promise;
-    }
-
-    public get data(): T[] {
-        return this.promise.value;
     }
 
     public get value(): T[] {
         return this.promise.value;
     }
 
-    // private getPoolConnection(): Promise<PoolConnection> {
-    //     return new Promise((resolve, reject) => {
-    //         this.mysqlPool.getConnection((mysqlError: MysqlError, poolConnection: PoolConnection) => {
-    //             if (mysqlError) {
-    //                 reject(mysqlError);
-    //                 return;
-    //             }
-    //             resolve(poolConnection);
-    //         });
-    //     });
-    // }
-
-    // private async waitForPoolConnection(): Promise<void> {
-    //     // if (this.poolConnection) {
-    //     //     return;
-    //     // }
-    //     const getPoolConnection = async () => {
-    //         try {
-    //             this.poolConnection = await this.getPoolConnection();
-    //             console.log(this.poolConnection);
-    //         }
-    //         catch (error) {
-    //             return getPoolConnection();
-    //         }
-    //     }
-    //     while(!this.poolConnection) {
-    //         await getPoolConnection();
-    //     }
-    // };
-
     public cancel(): void {
-        if (!this.queryIsEnded) {
-            if (this.poolConnection) {
-                this.poolConnection.destroy();
-            }
-            this.promise.reject();
+        console.log('Query.cancel()', 'queryIsEnded', this.queryIsEnded);
+        if (this.queryIsEnded) {
+            return;
         }
+        this.queryIsCancelled = true;
+        if (this.poolConnection) {
+            // this.poolConnection.destroy();
+            this.poolConnection.release();
+        }
+        this.promise.reject('Query.cancel()');
     }
 
 }
-
 
 export class DatabaseConnection {
 
@@ -154,14 +124,107 @@ export class DatabaseConnection {
             host:     process.env.DB_HOST,
             database: process.env.DB_NAME,
             user:     process.env.DB_USER,
-            password: process.env.DB_PASSWORD
+            password: process.env.DB_PASSWORD,
         });
-        console.log(mysqlPool);
         this.mysqlPool = mysqlPool;
     }
 
     public query<T>(queryString: string): Query<T> {
         return new Query<T>(queryString, this.mysqlPool);
+    }
+
+}
+
+
+
+export interface DataMethods {
+    getArchiveData(rtp: RequestTimeParams, signal?: AbortSignal): Promise<Archive[]>;
+    getRawData(): Promise<Raw[]>;
+}
+
+
+export class Database implements DataMethods {
+
+    constructor(
+        private databaseConnection: DatabaseConnection,
+    ) { }
+
+    public query<T>(queryString: string): Query<T> {
+        return this.databaseConnection.query(queryString);
+    }
+
+    public async getArchiveData(rtp: RequestTimeParams, signal?: AbortSignal): Promise<Archive[]> {
+        const queryString = `
+            SELECT
+                dateTime,
+                barometer,
+                outTemp,
+                outHumidity,
+                rainRate,
+                windSpeed,
+                windDir,
+                windGust,
+                windGustDir,
+                rain
+            FROM weewx.archive
+            WHERE dateTime >= ${ rtp.startTime } and dateTime <= ${ rtp.endTime }
+            ORDER BY dateTime ASC
+        `;
+        const query = this.query<Archive>(queryString);
+        if (signal) {
+            signal.addEventListener('abort', () => query.cancel(), { once: true });
+        }
+        const queryPromise = query.getValue();
+        return queryPromise;
+    }
+
+    public getRawData(): Promise<Raw[]> {
+        const queryString = `
+            SELECT
+                barometer,
+                dateTime,
+                dayRain,
+                heatindex,
+                outHumidity,
+                outTemp,
+                rainRate,
+                windDir,
+                windSpeed
+            FROM raw ORDER BY dateTime DESC LIMIT 1
+        `;
+        const query = this.query<Raw>(queryString);
+        const queryPromise = query.getValue();
+        return queryPromise;
+    }
+
+}
+
+
+
+export class DatabaseCacher implements DataMethods {
+
+
+    constructor(
+        private database: Database,
+    ) { }
+
+    public query<T>(queryString: string): Query<T> {
+        return this.database.query(queryString);
+    }
+
+    private archiveDataCache = new DataCache<Archive[]>();
+    public async getArchiveData(rtp: RequestTimeParams, signal?: AbortSignal): Promise<Archive[]> {
+        const cachedData = this.archiveDataCache.getDataForRequestTimeParams(rtp);
+        if (cachedData) {
+            return cachedData;
+        }
+        const data = await this.database.getArchiveData(rtp, signal);
+        this.archiveDataCache.setDataForRequestTimeParams(rtp, data);
+        return data;
+    }
+
+    public getRawData(): Promise<Raw[]> {
+        return this.database.getRawData();
     }
 
 }
