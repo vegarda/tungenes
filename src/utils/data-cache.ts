@@ -44,6 +44,11 @@ export class DataCache<T> {
         return null;
     }
 
+    public getDataCacheEntryForRequestTimeParams(requestTimeParams: RequestTimeParams): DataCacheEntry<T | null> {
+        const cacheId = DataCache.getCacheIdForRequestTimeParams(requestTimeParams);
+        return this.get(cacheId);
+    }
+
     public getDataForRequestTimeParams(requestTimeParams: RequestTimeParams): T | null {
         const cacheId = DataCache.getCacheIdForRequestTimeParams(requestTimeParams);
         return this.getData(cacheId);

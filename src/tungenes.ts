@@ -2,9 +2,12 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 
-import fastifyInstanceBuilder, { FastifyInstance, HTTPMethods } from 'fastify';
+import fastifyInstanceBuilder, { FastifyInstance } from 'fastify';
 import fastifyCors from 'fastify-cors';
 import fastifyCompression from 'fastify-compress';
+import fastifyCaching from 'fastify-caching';
+import fastifyWebsocket, { WebsocketPluginOptions } from 'fastify-websocket';
+
 
 import DataSocket from './data-socket';
 
@@ -70,6 +73,26 @@ export default class Tungenes {
         this._fastify.register(fastifyCompression, options);
     }
 
+    private configFastifyCaching(): void {
+        const options = {
+            privacy: fastifyCaching.privacy.NOCACHE,
+        }
+        this._fastify.register(fastifyCaching, options )
+    }
+
+    private configFastifyWebsocket(): void {
+        const options: WebsocketPluginOptions = {
+            options: {
+                maxPayload: 1048576,
+                // port: 800,
+            }
+        }
+        this._fastify.register(fastifyWebsocket, options);
+    }
+
+
+
+
     private configFastify(): void {
         if (this._fastify) {
             return;
@@ -82,11 +105,14 @@ export default class Tungenes {
         this._fastify.listen(this.port);
         this.configFastifyCors();
         this.configFastifyCompression();
+        this.configFastifyCaching();
+        this.configFastifyWebsocket();
+
     }
 
 
     private addDataSocket() {
-        this.dataSocket = new DataSocket(this.dataMethods);
+        this.dataSocket = new DataSocket(this._fastify, this.dataMethods);
     }
 
     private addRoute(route: Type<Route>): void {

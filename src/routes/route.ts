@@ -1,7 +1,8 @@
 import { FastifyReply, FastifyRequest, HTTPMethods, RouteHandlerMethod } from 'fastify';
+import * as asdasdas from 'fastify-caching';
 
 import { DataMethods } from 'database';
-import { DataCache } from '../utils/data-cache';
+import { DataCache, DataCacheEntry } from '../utils/data-cache';
 import { RequestTimeParams } from '../utils/request-time-params';
 
 
@@ -27,6 +28,13 @@ export abstract class Route<ResponseData = unknown> {
     }
 
     public abstract getHandler(dataMethods: DataMethods): RouteHandlerMethod;
+
+    public getDataCacheEntryForRequestTimeParams(rtp: RequestTimeParams): DataCacheEntry<ResponseData | null> {
+        if (this.dataCache) {
+            return this.dataCache.getDataCacheEntryForRequestTimeParams(rtp);
+        }
+        return null;
+    }
 
     public getCachedDataForRequestTimeParams(rtp: RequestTimeParams): ResponseData | null {
         if (this.dataCache) {
@@ -67,6 +75,12 @@ export abstract class DataRoute<QueryData, ResponseData = QueryData> extends Rou
 
             const data = await this.getData(dataMethods, rtp, abortController.signal);
             this.setCachedDataForRequestTimeParams(data, rtp);
+
+            const cachedEntry = this.getDataCacheEntryForRequestTimeParams(rtp);
+            if (cachedEntry) {
+                (reply as any).expires(new Date(cachedEntry.expiresAt));
+                // asdasdas.
+            }
 
             reply.send(data);
 
