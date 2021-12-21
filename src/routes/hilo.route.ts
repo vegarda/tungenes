@@ -4,6 +4,7 @@ import { DataMethods } from '../database';
 import { DataRoute} from './route';
 
 import { RequestTimeParams } from '../utils/request-time-params';
+import { DataCache } from '../utils/data-cache';
 
 import { amountParamName, timeUnitParamName } from '../models/route';
 import { Archive } from '../data/archive';
@@ -20,6 +21,10 @@ class HiLoValue {
     low: number = Number.MAX_VALUE;
     lowTime: number = 0;
     average: number = 0;
+
+    constructor(
+        public property: string,
+    ) { }
 
     public addValue(value: number, dateTime: number): void {
         if (!Number.isFinite(value)) {
@@ -42,10 +47,10 @@ class HiLoValue {
 
 class HiLo {
 
-    outTemp: HiLoValue = new HiLoValue();
-    barometer: HiLoValue = new HiLoValue();
-    windSpeed: HiLoValue = new HiLoValue();
-    windGust: HiLoValue = new HiLoValue();
+    outTemp: HiLoValue = new HiLoValue('outTemp');
+    barometer: HiLoValue = new HiLoValue('barometer');
+    windSpeed: HiLoValue = new HiLoValue('windSpeed');
+    windGust: HiLoValue = new HiLoValue('windGust');
 
     constructor(data: Archive[]) {
 
@@ -65,6 +70,11 @@ export class HiLoRoute extends DataRoute<Archive, HiLo> {
 
     public static readonly method = 'GET';
     public static readonly route = `/api/hilo/:${ timeUnitParamName }/:${ amountParamName }`;
+
+    constructor() {
+        super();
+        this.dataCache = new DataCache<HiLo>();
+    }
 
     public async getData(dataMethods: DataMethods, rtp: RequestTimeParams, signal?: AbortSignal): Promise<HiLo> {
         const data = await dataMethods.getArchiveData(rtp, signal);;

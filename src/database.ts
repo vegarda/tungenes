@@ -25,7 +25,6 @@ class Query<T> {
         private mysqlPool: Pool,
         private timeout: number = 30000,
     ) {
-        console.log('Query');
         if (!queryString) {
             throw new Error('!queryString');
         }
@@ -83,7 +82,7 @@ class Query<T> {
                     return;
                 }
 
-                console.log('query time', (Date.now() - queryStartTime) / 1000);
+                // console.log('query time', (Date.now() - queryStartTime) / 1000);
 
                 this.promise.resolve(rows);
 
@@ -154,6 +153,7 @@ export class Database implements DataMethods {
     }
 
     public async getArchiveData(rtp: RequestTimeParams, signal?: AbortSignal): Promise<Archive[]> {
+        console.log('DatabaseCacher.Database()', rtp);
         const queryString = `
             SELECT
                 dateTime,
@@ -214,6 +214,7 @@ export class DatabaseCacher implements DataMethods {
 
     private archiveDataCache = new DataCache<Archive[]>();
     public async getArchiveData(rtp: RequestTimeParams, signal?: AbortSignal): Promise<Archive[]> {
+        console.log('DatabaseCacher.getArchiveData()', rtp);
         const cachedData = this.archiveDataCache.getDataForRequestTimeParams(rtp);
         if (cachedData) {
             return cachedData;

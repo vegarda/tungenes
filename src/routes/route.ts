@@ -54,6 +54,8 @@ export abstract class DataRoute<QueryData, ResponseData = QueryData> extends Rou
 
             const rtp = RequestTimeParams.fromParams(request.params);
 
+            console.log(request.url, rtp);
+
             const cachedValue = this.getCachedDataForRequestTimeParams(rtp);
             if (cachedValue) {
                 reply.send(cachedValue);

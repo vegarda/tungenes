@@ -36,7 +36,7 @@ export default class DataSocket {
     private async init(): Promise<void> {
 
         this.consoleData$.subscribe(consoleData => {
-            console.log('DataSocket.consoleData$', consoleData);
+            // console.log('DataSocket.consoleData$', consoleData);
             this.updateSocketsWithData();
         })
 
@@ -84,7 +84,7 @@ export default class DataSocket {
     }
 
     private async updateSockets() {
-        console.log('DataSocket.updateSockets()');
+        // console.log('DataSocket.updateSockets()');
         await this.updateData();
         this.sleepAndUpdate();
     }
@@ -97,7 +97,7 @@ export default class DataSocket {
     }
 
     private async sleepAndUpdate(sleepDuration: number = 10000) {
-        console.log('DataSocket.sleepAndUpdate()');
+        // console.log('DataSocket.sleepAndUpdate()');
         await this.sleep(sleepDuration);
         this.updateSockets();
     }
@@ -116,7 +116,7 @@ export default class DataSocket {
     }
 
     private async getData(): Promise<Raw> {
-        console.log('DataSocket.getData()');
+        // console.log('DataSocket.getData()');
         const rawData = await this.dataMethods.getRawData();
         if (rawData) {
             return rawData[0];
@@ -125,16 +125,14 @@ export default class DataSocket {
     }
 
     private async updateData(): Promise<void> {
-        console.log('DataSocket.updateData()');
+        // console.log('DataSocket.updateData()');
         try {
             const data = await this.getData();
-            // console.log(data);
             if (this.consoleData$.value.dateTime < data.dateTime) {
                 this.consoleData$.next(data);
             }
         }
         catch (error) {
-            console.error('updateData reject');
             if (error) {
                 console.error(error.name);
                 console.error(error.message);
