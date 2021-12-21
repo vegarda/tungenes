@@ -16,9 +16,9 @@ class HiLoValue {
     private _avgSum: number = 0;
     private _avgCount: number = 0;
 
-    high: number = Number.MIN_VALUE;
+    high: number = Number.MIN_SAFE_INTEGER;
     highTime: number = 0;
-    low: number = Number.MAX_VALUE;
+    low: number = Number.MAX_SAFE_INTEGER;
     lowTime: number = 0;
     average: number = 0;
 

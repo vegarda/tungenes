@@ -44,8 +44,8 @@ export class ArchiveRoute extends DataRoute<Archive, ArchiveData[]> {
 
         let outTempSum: number = 0;
         let outTempCount: number = 0;
-        let minOutTemp: number = Number.MAX_VALUE;
-        let maxOutTemp: number = Number.MIN_VALUE;
+        let minOutTemp: number = Number.MAX_SAFE_INTEGER;
+        let maxOutTemp: number = Number.MIN_SAFE_INTEGER;
 
         let rainRateSum: number = 0;
         let rainRateCount: number = 0;
@@ -71,6 +71,9 @@ export class ArchiveRoute extends DataRoute<Archive, ArchiveData[]> {
         const convertData: ArchiveData[] = [];
 
         const pushData = () => {
+            if (outTempCount === 0) {
+                return;
+            }
             const windSpeedVectorLength = Math.sqrt(Math.pow(windSpeedVector[0], 2) + Math.pow(windSpeedVector[1], 2));
             const windGustVectorLength = Math.sqrt(Math.pow(windGustVector[0], 2) + Math.pow(windGustVector[1], 2));
             const windDir = Math.acos(windSpeedVector[0] / windSpeedVectorLength) * 180 / Math.PI;
@@ -162,8 +165,8 @@ export class ArchiveRoute extends DataRoute<Archive, ArchiveData[]> {
 
                 outTempSum = 0;
                 outTempCount = 0;
-                minOutTemp = Number.MAX_VALUE;
-                maxOutTemp = Number.MIN_VALUE;
+                minOutTemp = Number.MAX_SAFE_INTEGER;
+                maxOutTemp = Number.MIN_SAFE_INTEGER;
 
                 rainRateSum = 0;
                 rainRateCount = 0;

@@ -17,22 +17,27 @@ export class RequestTimeParams {
         let timeUnit: TimeUnit = TimeUnit.Day;
         let amount: number = 1;
 
-        amount = Number.parseInt(params[amountParamName], 10);
-        timeUnit = params[timeUnitParamName];
-
-        if (!allowedTimeUnits.includes(timeUnit)) {
-            throw new Error(`Illegal TimeUnit: ${ timeUnit }`);
+        try {
+            amount = Number.parseInt(params[amountParamName], 10);
+            timeUnit = params[timeUnitParamName].toLowerCase();
+        }
+        catch (error) {
+            throw new Error(`Illegal params.`);
         }
 
-        if (params.amount < 1) {
-            params.amount = 1;
+        if (!allowedTimeUnits.includes(timeUnit)) {
+            throw new Error(`Illegal TimeUnit: "${ timeUnit }".`);
+        }
+
+        if (amount < 1 || !Number.isFinite(amount)) {
+            amount = 1;
         }
 
         return RequestTimeParams.calculate(timeUnit, amount);
 
     }
 
-    public static calculate(timeUnit: TimeUnit, amount: number): RequestTimeParams {
+    public static calculate(timeUnit: TimeUnit, amount: number = 1): RequestTimeParams {
 
         let startTime: number = 0;
         let endTime: number = 0;
@@ -75,6 +80,9 @@ export class RequestTimeParams {
             endTime = tomorrow;
         }
 
+        console.log('startTime', startTime, new Date(startTime));
+        console.log('endTime', endTime, new Date(endTime));
+
         switch (timeUnit) {
             case TimeUnit.Week:
                 interval = 1 * hourInSeconds;
@@ -82,6 +90,7 @@ export class RequestTimeParams {
             case TimeUnit.Month:
                 interval = 6 * hourInSeconds;
                 break;
+            case TimeUnit.Ytd:
             case TimeUnit.Year:
                 interval = dayInSeconds;
                 break;
