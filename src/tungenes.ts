@@ -5,7 +5,6 @@ dotenv.config();
 import fastifyInstanceBuilder, { FastifyInstance } from 'fastify';
 import fastifyCors from 'fastify-cors';
 import fastifyCompression from 'fastify-compress';
-import fastifyCaching from 'fastify-caching';
 import fastifyWebsocket, { WebsocketPluginOptions } from 'fastify-websocket';
 
 
@@ -73,13 +72,6 @@ export default class Tungenes {
         this._fastify.register(fastifyCompression, options);
     }
 
-    private configFastifyCaching(): void {
-        const options = {
-            privacy: fastifyCaching.privacy.NOCACHE,
-        }
-        this._fastify.register(fastifyCaching, options )
-    }
-
     private configFastifyWebsocket(): void {
         const options: WebsocketPluginOptions = {
             options: {
@@ -105,7 +97,6 @@ export default class Tungenes {
         this._fastify.listen(this.port);
         this.configFastifyCors();
         this.configFastifyCompression();
-        this.configFastifyCaching();
         this.configFastifyWebsocket();
 
     }

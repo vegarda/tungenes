@@ -1,4 +1,5 @@
 
+import { DataCache } from '../utils/data-cache';
 import { Archive } from '../data/archive';
 import { DataMethods } from '../database';
 import { amountParamName, timeUnitParamName } from '../models/route';
@@ -24,6 +25,11 @@ export class WindroseRoute extends DataRoute<Archive, WindResponseData> {
 
     public static readonly method = `GET`;
     public static readonly route = `/api/windrose/:${ timeUnitParamName }/:${ amountParamName }`;
+
+    constructor() {
+        super();
+        this.dataCache = new DataCache<WindResponseData>();
+    }
 
     public async getData(dataMethods: DataMethods, rtp: RequestTimeParams, signal?: AbortSignal): Promise<WindResponseData> {
         const data = await dataMethods.getArchiveData(rtp, signal);
