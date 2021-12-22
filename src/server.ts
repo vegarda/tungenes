@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import Tungenes from 'tungenes';
+import Tungenes from './tungenes';
 
 const isProduction = process.env.NODE_ENV && process.env.NODE_ENV.toLowerCase() === 'production';
 if (isProduction) {

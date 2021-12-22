@@ -8,7 +8,7 @@
     "postbuild": "ts-node post-build.ts",
     "compile": "tsc",
     "watch": "tsc-watch",
-    "start": "tsc-watch --onSuccess \"node --inspect dist/tungenes.js\""
+    "start": "tsc-watch --onSuccess \"node --inspect dist/server.js\""
   },
   "dependencies": {
     "debug": "^4.3.3",
