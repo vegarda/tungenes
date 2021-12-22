@@ -75,7 +75,7 @@ export default class DataSocket {
 
         };
 
-        this.fastify.get('/', { websocket: true }, (socketStream: SocketStream, req: FastifyRequest) => {
+        this.fastify.get('/ws', { websocket: true }, (socketStream: SocketStream, req: FastifyRequest) => {
             onConnection(socketStream);
         });
 

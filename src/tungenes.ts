@@ -3,7 +3,9 @@ dotenv.config({ path: `${ __dirname }/../.env` });
 
 console.log('process.env', process.env);
 
-import fastifyInstanceBuilder, { FastifyInstance } from 'fastify';
+import * as fs from 'fs';
+
+import fastifyInstanceBuilder, { FastifyHttpsOptions, FastifyInstance, FastifyServerOptions } from 'fastify';
 import fastifyCors from 'fastify-cors';
 import fastifyCompression from 'fastify-compress';
 import fastifyWebsocket, { WebsocketPluginOptions } from 'fastify-websocket';
@@ -78,12 +80,23 @@ export default class Tungenes {
 
 
 
-
     private configFastify(): void {
         if (this._fastify) {
             return;
         }
-        this._fastify = fastifyInstanceBuilder();
+
+        if (process.env.CERT_PATH && process.env.KEY_PATH) {
+            this._fastify = fastifyInstanceBuilder({
+                https: {
+                    key: fs.readFileSync(process.env.KEY_PATH),
+                    cert: fs.readFileSync(process.env.CERT_PATH),
+                }
+            });
+        }
+        else {
+            this._fastify = fastifyInstanceBuilder();
+        }
+
         this._fastify.setErrorHandler((error, request, reply) => {
             console.error(error);
             reply.send();
