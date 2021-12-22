@@ -35,7 +35,7 @@ export default class Tungenes {
 
 
     constructor(
-        private port: number = 443,
+        private port: number = 445,
     ) {
         console.log('Tungenes', this.port);
 
@@ -70,7 +70,6 @@ export default class Tungenes {
         const options: WebsocketPluginOptions = {
             options: {
                 maxPayload: 1048576,
-                // port: 800,
             }
         }
         this._fastify.register(fastifyWebsocket, options);
