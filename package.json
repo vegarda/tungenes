@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "prebuild": "npm install",
+    "build": "npm run compile",
+    "postbuild": "ts-node post-build.ts",
     "compile": "tsc",
     "watch": "tsc-watch",
     "start": "tsc-watch --onSuccess \"node --inspect dist/tungenes.js\""

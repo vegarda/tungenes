@@ -14,20 +14,14 @@ import DataSocket from './data-socket';
 import { ArchiveRoute } from './routes/archive.route';
 import { HiLoRoute } from './routes/hilo.route';
 import { WindroseRoute } from './routes/windrose.route';
-// import { Windrose10Route } from './routes/windrose10.route';
 import { Database, DatabaseCacher, DatabaseConnection, DataMethods } from './database';
 import { Route } from 'routes/route';
+
 
 export declare interface Type<T> extends Function {
     new (...args: any[]): T;
 }
 
-
-/**
- * todo
- *
- *
- */
 
 export default class Tungenes {
 
@@ -125,15 +119,3 @@ export default class Tungenes {
     }
 
 }
-
-
-const isProduction = process.env.NODE_ENV && process.env.NODE_ENV.toLowerCase() === 'production';
-if (isProduction) {
-    const tungenes: Tungenes = new Tungenes();
-}
-else {
-    const tungenes: Tungenes = new Tungenes(8080);
-}
-
-
-
