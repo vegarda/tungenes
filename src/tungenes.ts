@@ -35,7 +35,7 @@ export default class Tungenes {
 
 
     constructor(
-        private port: number = 80,
+        private port: number = 443,
     ) {
         console.log('Tungenes', this.port);
 

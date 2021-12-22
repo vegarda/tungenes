@@ -30,7 +30,6 @@ export default class DataSocket {
     constructor(
         private fastify: FastifyInstance,
         private dataMethods: DataMethods,
-        private port: number = 800,
     ) {
         this.init();
     }
