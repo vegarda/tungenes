@@ -1,5 +1,4 @@
 import { FastifyReply, FastifyRequest, HTTPMethods, RouteHandlerMethod } from 'fastify';
-import * as asdasdas from 'fastify-caching';
 
 import { DataMethods } from 'database';
 import { DataCache, DataCacheEntry } from '../utils/data-cache';
