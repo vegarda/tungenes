@@ -39,7 +39,7 @@ fs.writeFileSync(serviceFilePath, serviceFile);
 
 
 const serverFilePath = `${ distDirPath }/server.js`;
-fs.chmodSync(serverFilePath, 0o665);
+fs.chmodSync(serverFilePath, 0o775);
 
 const copyServiceFilePath = `${ __dirname }/copy-service.sh`;
-fs.chmodSync(copyServiceFilePath, 0o665);
+fs.chmodSync(copyServiceFilePath, 0o775);
