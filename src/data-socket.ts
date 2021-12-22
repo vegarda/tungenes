@@ -65,7 +65,7 @@ export default class DataSocket {
 
             socketStream.on('close', () => {
                 console.log('socket close');
-                this.openSocketStreams.splice(this.openSocketStreams.indexOf(socketStream));
+                this.openSocketStreams.splice(this.openSocketStreams.indexOf(socketStream), 1);
                 console.log('DataSocket.openSocketStreams: ' + this.openSocketStreams.length);
             });
 
