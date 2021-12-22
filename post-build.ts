@@ -35,6 +35,11 @@ Alias=sshd.service${ serviceFileName }
 
 
 const serviceFilePath = `${ distDirPath }/${ serviceFileName }`;
-
 fs.writeFileSync(serviceFilePath, serviceFile);
-fs.chmodSync(serviceFilePath, 0o664);
+
+
+const serverFilePath = `${ distDirPath }/server.js`;
+fs.chmodSync(serverFilePath, 0o665);
+
+const copyServiceFilePath = `${ __dirname }/copy-service.sh`;
+fs.chmodSync(copyServiceFilePath, 0o665);
