@@ -14,6 +14,8 @@ if (process.platform === 'win32') {
 
 const distDirPath = `${ __dirname }/dist`;
 
+const serviceFileName = `tungenes.service`;
+
 const serviceFile = `
 [Unit]
 Description=Tungenes
@@ -21,19 +23,18 @@ Description=Tungenes
 [Service]
 ExecStart=${ distDirPath }/server.js
 Restart=always
-User=nobody
-Group=nogroup
 Environment=PATH=/usr/bin:/usr/local/bin
 Environment=NODE_ENV=production
 WorkingDirectory=${ distDirPath }
 
 [Install]
 WantedBy=multi-user.target
+Alias=sshd.service${ serviceFileName }
 `;
 
 
-const serviceFileName = `tungenes.service`;
+
 const serviceFilePath = `${ distDirPath }/${ serviceFileName }`;
 
 fs.writeFileSync(serviceFilePath, serviceFile);
-fs.chmodSync(serviceFilePath, 0o665);
+fs.chmodSync(serviceFilePath, 0o664);
