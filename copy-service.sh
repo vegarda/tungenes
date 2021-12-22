@@ -20,7 +20,7 @@ RESTART_SYSTEMCTL_COMMAND="systemctl daemon-reload";
 echo $RESTART_SYSTEMCTL_COMMAND;
 eval $RESTART_SYSTEMCTL_COMMAND;
 
-START_SERVICE_COMMAND="systemctl enable tungenes";
+START_SERVICE_COMMAND="systemctl start tungenes";
 echo $START_SERVICE_COMMAND;
 eval $START_SERVICE_COMMAND;
 
