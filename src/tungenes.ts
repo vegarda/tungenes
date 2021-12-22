@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
-dotenv.config();
+dotenv.config({ path: `${ __dirname }/../.env` });
 
+console.log('process.env', process.env);
 
 import fastifyInstanceBuilder, { FastifyInstance } from 'fastify';
 import fastifyCors from 'fastify-cors';
