@@ -54,6 +54,16 @@ export default class DataSocket {
 
         const onConnection = async (socketStream: SocketStream) => {
 
+            console.log('socketStream.socket.readyState', socketStream.socket.readyState);
+
+            socketStream.socket.on('close', () => {
+                console.log('socket close');
+            });
+
+            socketStream.socket.on('open', () => {
+                console.log('socket open');
+            });
+
             if (this.openSocketStreams.length === 0) {
                 await this.updateData();
             }
@@ -63,8 +73,12 @@ export default class DataSocket {
 
             this.updateSocketStream(socketStream);
 
+            socketStream.on('end', () => {
+                console.log('socketStream end');
+            });
+
             socketStream.on('close', () => {
-                console.log('socket close');
+                console.log('socketStream close');
                 this.openSocketStreams.splice(this.openSocketStreams.indexOf(socketStream), 1);
                 console.log('DataSocket.openSocketStreams: ' + this.openSocketStreams.length);
             });
@@ -94,7 +108,7 @@ export default class DataSocket {
         });
     }
 
-    private async sleepAndUpdate(sleepDuration: number = 10000) {
+    private async sleepAndUpdate(sleepDuration: number = 1000) {
         // console.log('DataSocket.sleepAndUpdate()');
         await this.sleep(sleepDuration);
         this.updateSockets();
