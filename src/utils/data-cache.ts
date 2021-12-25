@@ -57,7 +57,7 @@ export class DataCache<T> {
     public setDataForRequestTimeParams(requestTimeParams: RequestTimeParams, data: T): void {
         const now = Date.now();
         const intervalInMs = requestTimeParams.interval * 1000;
-        const cacheExpiresAt = (Math.floor(now * intervalInMs) / intervalInMs) + (intervalInMs / 2);
+        const cacheExpiresAt = (Math.floor(now / intervalInMs) / intervalInMs) + (intervalInMs / 2);
         const cacheId = DataCache.getCacheIdForRequestTimeParams(requestTimeParams);
         this.setData(cacheId, {
             cacheDate: now,
