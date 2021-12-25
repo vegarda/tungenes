@@ -28,8 +28,8 @@ export class DataCache<T> {
     }
 
     public get(id: number): DataCacheEntry<T | null> {
-        const cacheEntry = this.cacheMap.get(id);
         this.cleanCache();
+        const cacheEntry = this.cacheMap.get(id);
         if (cacheEntry) {
             return cacheEntry;
         }
