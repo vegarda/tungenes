@@ -63,7 +63,7 @@ export abstract class DataRoute<QueryData, ResponseData = QueryData> extends Rou
 
             let cachedEntry = this.getDataCacheEntryForRequestTimeParams(rtp);
             if (cachedEntry) {
-                const maxAge = Math.floor((cachedEntry.expiresAt - cachedEntry.cacheDate) / 1000);
+                const maxAge = Math.floor((cachedEntry.expiresAt - Date.now()) / 1000);
                 reply.header('Cache-Control', `max-age=${ maxAge }`);
                 reply.send(cachedEntry.data);
                 return;
@@ -77,7 +77,7 @@ export abstract class DataRoute<QueryData, ResponseData = QueryData> extends Rou
 
             cachedEntry = this.getDataCacheEntryForRequestTimeParams(rtp);
             if (cachedEntry) {
-                const maxAge = Math.floor((cachedEntry.expiresAt - cachedEntry.cacheDate) / 1000);
+                const maxAge = Math.floor((cachedEntry.expiresAt - Date.now()) / 1000);
                 reply.header('Cache-Control', `max-age=${ maxAge }`);
             }
 
