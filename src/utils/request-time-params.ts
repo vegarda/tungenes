@@ -62,15 +62,27 @@ export class RequestTimeParams {
             switch (timeUnit) {
                 case TimeUnit.Week:
                     tempUnit = weekInSeconds;
+                    if (amount > 4) {
+                        amount = 4;
+                    }
                     break;
                 case TimeUnit.Month:
                     tempUnit = monthInSeconds;
+                    if (amount > 12) {
+                        amount = 12;
+                    }
                     break;
                 case TimeUnit.Year:
                     tempUnit = yearInSeconds;
+                    if (amount > 1) {
+                        amount = 1;
+                    }
                     break;
                 default:
                     tempUnit = dayInSeconds;
+                    if (amount > 7) {
+                        amount = 7;
+                    }
                     break;
             }
             startTime = tomorrow - (amount * tempUnit);
