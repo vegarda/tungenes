@@ -49,10 +49,12 @@ export class WindroseRoute extends DataRoute<Archive, WindResponseData> {
         const windVector = windResposeData.windVector;
 
         querydata.forEach(dataPoint => {
-            let ordinal = Math.round(dataPoint.windDir / 22.5);
-            ordinal = ordinal === 16 ? 0 : ordinal;
-            windVelocity[ordinal] += dataPoint.windSpeed;
-            windFrequency[ordinal] += 1;
+            if (Number.isFinite(dataPoint.windSpeed)) {
+                let ordinal = Math.round(dataPoint.windDir / 22.5);
+                ordinal = ordinal === 16 ? 0 : ordinal;
+                windVelocity[ordinal] += dataPoint.windSpeed;
+                windFrequency[ordinal] += 1;
+            }
         });
 
         let windFrequencySum: number = windFrequency.reduce((a, b) => a + b);

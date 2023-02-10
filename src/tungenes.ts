@@ -1,14 +1,14 @@
 import * as dotenv from 'dotenv';
 dotenv.config({ path: `${ __dirname }/../.env` });
 
-console.log('process.env', process.env);
+// console.log('process.env', process.env);
 
 import * as fs from 'fs';
 
-import fastifyInstanceBuilder, { FastifyHttpsOptions, FastifyInstance, FastifyServerOptions } from 'fastify';
-import fastifyCors from 'fastify-cors';
-import fastifyCompression from 'fastify-compress';
-import fastifyWebsocket, { WebsocketPluginOptions } from 'fastify-websocket';
+import fastifyInstanceBuilder, { FastifyHttpsOptions, FastifyInstance, FastifyListenOptions, FastifyReply, FastifyRequest, FastifyServerOptions } from 'fastify';
+import fastifyCors from '@fastify/cors';
+import fastifyCompression from '@fastify/compress';
+import fastifyWebsocket, { SocketStream, WebsocketPluginOptions } from '@fastify/websocket';
 
 
 import DataSocket from './data-socket';
@@ -73,8 +73,8 @@ export default class Tungenes {
         const options: WebsocketPluginOptions = {
             options: {
                 maxPayload: 1048576,
-            }
-        }
+            },
+        };
         this._fastify.register(fastifyWebsocket, options);
     }
 
@@ -101,7 +101,10 @@ export default class Tungenes {
             console.error(error);
             reply.send();
         });
-        this._fastify.listen(this.port);
+        const listenOptions: FastifyListenOptions = {
+            port: this.port,
+        };
+        this._fastify.listen(listenOptions);
         this.configFastifyCors();
         this.configFastifyCompression();
         this.configFastifyWebsocket();

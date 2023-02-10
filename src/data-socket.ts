@@ -2,7 +2,7 @@ import { Raw } from 'data/raw';
 import { DataMethods } from 'database';
 
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { SocketStream } from 'fastify-websocket';
+import { SocketStream } from '@fastify/websocket';
 
 import { BehaviorSubject } from 'rxjs';
 
@@ -51,7 +51,6 @@ export default class DataSocket {
     private configWebSocket() {
         console.log('DataSocket.configWebSocket()');
 
-
         const onConnection = async (socketStream: SocketStream) => {
 
             if (this.openSocketStreams.length === 0) {
@@ -61,7 +60,7 @@ export default class DataSocket {
             this.openSocketStreams.push(socketStream);
             console.log('DataSocket.openSocketStreams: ' + this.openSocketStreams.length);
 
-            this.updateSocketStream(socketStream);
+            this.updateSocketStreamWithData(socketStream);
 
             socketStream.socket.on('close', () => {
                 console.log('socketStream.socket close');
@@ -79,8 +78,10 @@ export default class DataSocket {
 
         };
 
-        this.fastify.get('/ws', { websocket: true }, (socketStream: SocketStream, req: FastifyRequest) => {
-            onConnection(socketStream);
+        this.fastify.register(async () => {
+            this.fastify.get('/ws', { websocket: true }, (socketStream: SocketStream, req: FastifyRequest) => {
+                onConnection(socketStream);
+            });
         });
 
     }
@@ -94,7 +95,7 @@ export default class DataSocket {
     private updateSocketsWithData() {
         // console.log('DataSocket.updateSocketsWithData()');
         this.openSocketStreams.forEach(socket => {
-            this.updateSocketStream(socket);
+            this.updateSocketStreamWithData(socket);
         });
     }
 
@@ -104,7 +105,7 @@ export default class DataSocket {
         this.updateSockets();
     }
 
-    private updateSocketStream(socketStream: SocketStream) {
+    private updateSocketStreamWithData(socketStream: SocketStream) {
         const consoleData = this.consoleData$.value;
         if (consoleData) {
             socketStream.socket.send(JSON.stringify(consoleData));

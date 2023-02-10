@@ -76,25 +76,29 @@ export class ArchiveRoute extends DataRoute<Archive, ArchiveData[]> {
             }
             const windSpeedVectorLength = Math.sqrt(Math.pow(windSpeedVector[0], 2) + Math.pow(windSpeedVector[1], 2));
             const windGustVectorLength = Math.sqrt(Math.pow(windGustVector[0], 2) + Math.pow(windGustVector[1], 2));
-            const windDir = Math.acos(windSpeedVector[0] / windSpeedVectorLength) * 180 / Math.PI;
-            const windGustDir = Math.acos(windGustVector[0] / windGustVectorLength) * 180 / Math.PI;
-            convertData.push({
+            let windDir = Math.acos(windSpeedVector[0] / windSpeedVectorLength) * 180 / Math.PI;
+            let windGustDir = Math.acos(windGustVector[0] / windGustVectorLength) * 180 / Math.PI;
+            let windSpeed = windSpeedCount > 0 ? windSpeedSum / windSpeedCount : 0;
+            let windGust = Math.max(windGustCount > 0 ? windGustSum / windGustCount : 0, windSpeed);
+            const outTemp = outTempSum / outTempCount;
+            const newData = {
                 dateTime: dateTime,
-                outTemp: outTempSum / outTempCount,
-                minOutTemp: minOutTemp,
-                maxOutTemp: maxOutTemp,
+                outTemp: outTemp,
+                minOutTemp: Math.min(minOutTemp, outTemp),
+                maxOutTemp: Math.max(maxOutTemp, outTemp),
                 rainRate: rainRateSum / rainRateCount,
                 outHumidity: outHumiditySum / outHumidityCount,
                 barometer: barometerSum / barometerCount,
                 rain: rainSum,
 
-                windSpeed: windSpeedSum / windSpeedCount,
+                windSpeed: windSpeed,
                 windDir: windDir,
 
-                windGust: windGustSum / windGustCount,
+                windGust: windGust,
                 windGustDir: windGustDir,
 
-            });
+            };
+            convertData.push(newData);
         }
 
         for (let i = 0; i < data.length; i++) {
@@ -131,7 +135,7 @@ export class ArchiveRoute extends DataRoute<Archive, ArchiveData[]> {
                 rainSum += _data.rain;
             }
 
-            if (Number.isFinite(_data.windSpeed)) {
+            if (Number.isFinite(_data.windSpeed) && Number.isFinite(_data.windGust)) {
                 windSpeedSum += _data.windSpeed;
                 windSpeedCount++;
                 if (Number.isFinite(_data.windDir)) {
@@ -141,9 +145,7 @@ export class ArchiveRoute extends DataRoute<Archive, ArchiveData[]> {
                     windSpeedVector[0]+= cos * _data.windSpeed;
                     windSpeedVector[1]+= sin * _data.windSpeed;
                 }
-            }
 
-            if (Number.isFinite(_data.windGust)) {
                 windGustSum += _data.windGust;
                 windGustCount++;
                 if (Number.isFinite(_data.windGustDir)) {
@@ -154,7 +156,6 @@ export class ArchiveRoute extends DataRoute<Archive, ArchiveData[]> {
                     windGustVector[1]+= sin * _data.windGust;
                 }
             }
-
 
 
             if (_data.dateTime >= dateTime + requestTimeParams.interval) {

@@ -61,6 +61,10 @@ class Query<T> {
             this.poolConnection = _poolConnection;
 
             if (mysqlError) {
+                if (_poolConnection) {
+                    _poolConnection.release();
+                }
+                console.error(mysqlError);
                 this.queryIsEnded = true;
                 this.promise.reject(mysqlError);
                 return;
@@ -124,6 +128,7 @@ export class DatabaseConnection {
             database: process.env.DB_NAME,
             user:     process.env.DB_USER,
             password: process.env.DB_PASSWORD,
+            waitForConnections: true,
         });
         this.mysqlPool = mysqlPool;
     }

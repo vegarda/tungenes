@@ -11,22 +11,21 @@
     "start": "tsc-watch --onSuccess \"node --inspect dist/server.js\""
   },
   "dependencies": {
-    "debug": "^4.3.3",
-    "dotenv": "^10.0.0",
-    "fastify": "^3.25.1",
-    "fastify-compress": "^4.0.1",
-    "fastify-cors": "^6.0.2",
-    "fastify-websocket": "^4.0.0",
-    "mysql2": "^2.3.3",
-    "rxjs": "^7.4.0"
+    "@fastify/compress": "^6.2.0",
+    "@fastify/cors": "^8.2.0",
+    "@fastify/websocket": "^7.1.2",
+    "debug": "^4.3.4",
+    "dotenv": "^16.0.3",
+    "fastify": "^4.13.0",
+    "mysql2": "^3.1.2",
+    "rxjs": "^7.8.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.7",
-    "@types/mysql": "^2.15.19",
-    "@types/node": "^16.11.7",
-    "@types/ws": "^8.2.2",
-    "ts-node": "^10.4.0",
-    "tsc-watch": "^4.5.0",
-    "typescript": "^4.4.4"
+    "@types/mysql": "^2.15.21",
+    "@types/node": "^18.13.0",
+    "ts-node": "^10.9.1",
+    "tsc-watch": "^6.0.0",
+    "typescript": "^4.9.5"
   }
 }
