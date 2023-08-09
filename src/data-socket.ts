@@ -23,6 +23,7 @@ export default class DataSocket {
         windDir: 0,
         windGust: 0,
         windGustDir: 0,
+        rain: 0,
         dayRain: 0,
         rainRate: 0,
     });
