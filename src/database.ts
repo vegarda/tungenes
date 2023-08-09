@@ -192,6 +192,7 @@ export class Database implements DataMethods {
                 heatindex,
                 outHumidity,
                 outTemp,
+                rain,
                 rainRate,
                 windDir,
                 windSpeed
