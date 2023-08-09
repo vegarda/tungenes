@@ -12,6 +12,7 @@ export interface Raw {
     windGust: number;
     windGustDir: number;
 
+    rain: number;
     dayRain: number;
     rainRate: number;
 
