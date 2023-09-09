@@ -29,7 +29,7 @@ WorkingDirectory=${ distDirPath }
 
 [Install]
 WantedBy=multi-user.target
-Alias=sshd.service${ serviceFileName }
+Alias=${ serviceFileName }
 `;
 
 
