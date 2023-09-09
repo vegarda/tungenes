@@ -23,7 +23,7 @@ Description=Tungenes
 [Service]
 ExecStart=${ distDirPath }/server.js
 Restart=always
-Environment=PATH=/usr/bin:/usr/local/bin
+Environment=PATH=/usr/bin:/usr/local/bin:/snap/bin
 Environment=NODE_ENV=production
 WorkingDirectory=${ distDirPath }
 
