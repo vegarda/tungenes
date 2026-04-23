@@ -1,4 +1,4 @@
-import { createPool, Pool, PoolConnection, QueryError } from 'mysql2';
+import { createPool, Pool, PoolConnection, QueryError, RowDataPacket } from 'mysql2';
 import { take } from 'rxjs';
 
 import { DataCache } from './utils/data-cache';
@@ -72,7 +72,7 @@ class Query<T> {
 
             const queryStartTime = Date.now();
 
-            const query = _poolConnection.query(this.queryString, (queryError: QueryError, rows: T[]) => {
+            _poolConnection.query<RowDataPacket[]>(this.queryString, (queryError: QueryError | null, rows: RowDataPacket[]) => {
 
                 this.queryIsEnded = true;
 
@@ -88,7 +88,7 @@ class Query<T> {
 
                 // console.log('query time', (Date.now() - queryStartTime) / 1000);
 
-                this.promise.resolve(rows);
+                this.promise.resolve(rows as T[]);
 
             });
 

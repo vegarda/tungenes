@@ -2,6 +2,7 @@
   "compileOnSave": true,
   "compilerOptions": {
     "allowJs": true,
+    "esModuleInterop": true,
     "lib": [
       "ESNext",
       "DOM"
@@ -13,6 +14,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./src",
+    "skipLibCheck": true,
     "types": [
       "node"
     ]
