@@ -2,7 +2,7 @@ import { Raw } from 'data/raw';
 import { DataMethods } from 'database';
 
 import { FastifyInstance, FastifyRequest } from 'fastify';
-import { SocketStream } from '@fastify/websocket';
+import type { WebSocket } from '@fastify/websocket';
 
 import { BehaviorSubject } from 'rxjs';
 
@@ -12,7 +12,7 @@ import { BehaviorSubject } from 'rxjs';
 
 export default class DataSocket {
 
-    private openSocketStreams: SocketStream[] = [];
+    private openSockets: WebSocket[] = [];
 
     private consoleData$ = new BehaviorSubject<Raw>({
         dateTime: 0,
@@ -52,36 +52,32 @@ export default class DataSocket {
     private configWebSocket() {
         console.log('DataSocket.configWebSocket()');
 
-        const onConnection = async (socketStream: SocketStream) => {
+        const onConnection = async (socket: WebSocket) => {
 
-            if (this.openSocketStreams.length === 0) {
+            if (this.openSockets.length === 0) {
                 await this.updateData();
             }
 
-            this.openSocketStreams.push(socketStream);
-            console.log('DataSocket.openSocketStreams: ' + this.openSocketStreams.length);
+            this.openSockets.push(socket);
+            console.log('DataSocket.openSockets: ' + this.openSockets.length);
 
-            this.updateSocketStreamWithData(socketStream);
+            this.updateSocketWithData(socket);
 
-            socketStream.socket.on('close', () => {
-                console.log('socketStream.socket close');
-                this.openSocketStreams.splice(this.openSocketStreams.indexOf(socketStream), 1);
-                console.log('DataSocket.openSocketStreams: ' + this.openSocketStreams.length);
+            socket.on('close', () => {
+                console.log('socket close');
+                this.openSockets.splice(this.openSockets.indexOf(socket), 1);
+                console.log('DataSocket.openSockets: ' + this.openSockets.length);
             });
 
-            socketStream.on('error', (error) => {
-                console.error(error);
-            });
-
-            socketStream.socket.on('error', (error) => {
+            socket.on('error', (error) => {
                 console.error(error);
             });
 
         };
 
         this.fastify.register(async () => {
-            this.fastify.get('/ws', { websocket: true }, (socketStream: SocketStream, req: FastifyRequest) => {
-                onConnection(socketStream);
+            this.fastify.get('/ws', { websocket: true }, (socket: WebSocket, req: FastifyRequest) => {
+                return onConnection(socket);
             });
         });
 
@@ -95,8 +91,8 @@ export default class DataSocket {
 
     private updateSocketsWithData() {
         // console.log('DataSocket.updateSocketsWithData()');
-        this.openSocketStreams.forEach(socket => {
-            this.updateSocketStreamWithData(socket);
+        this.openSockets.forEach(socket => {
+            this.updateSocketWithData(socket);
         });
     }
 
@@ -106,10 +102,10 @@ export default class DataSocket {
         this.updateSockets();
     }
 
-    private updateSocketStreamWithData(socketStream: SocketStream) {
+    private updateSocketWithData(socket: WebSocket) {
         const consoleData = this.consoleData$.value;
         if (consoleData) {
-            socketStream.socket.send(JSON.stringify(consoleData));
+            socket.send(JSON.stringify(consoleData));
         }
     }
 

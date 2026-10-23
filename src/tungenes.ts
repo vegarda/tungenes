@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import fastifyInstanceBuilder, { FastifyHttpsOptions, FastifyInstance, FastifyListenOptions, FastifyReply, FastifyRequest, FastifyServerOptions } from 'fastify';
 import fastifyCors from '@fastify/cors';
 import fastifyCompression from '@fastify/compress';
-import fastifyWebsocket, { SocketStream, WebsocketPluginOptions } from '@fastify/websocket';
+import fastifyWebsocket, { WebsocketPluginOptions } from '@fastify/websocket';
 
 
 import DataSocket from './data-socket';
